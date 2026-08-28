@@ -1,5 +1,8 @@
 import os
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 from typing import List, Dict, Any, Optional
 import requests
 
@@ -100,7 +103,7 @@ class MarketService:
                 f"Sending request to data.gov.in for commodity: '{api_commodity}', "
                 f"state: '{state}'"
             )
-            response = requests.get(self.base_url, params=params, timeout=10)
+            response = requests.get(self.base_url, params=params, timeout=30)
             response.raise_for_status()
 
             data = response.json()
