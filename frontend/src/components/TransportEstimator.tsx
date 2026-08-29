@@ -277,78 +277,90 @@ export default function TransportEstimator({
 
       {/* Results */}
       {result && !loading && (
-        <div className="space-y-3">
-          {/* Distance + Cost cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Distance */}
-            <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
-              <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                Road Distance
-              </span>
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                <MapPin className="w-4 h-4" />
-                <span className="text-xl font-bold">
-                  {result.estimated_road_distance_km} <span className="text-xs font-normal text-zinc-400">km</span>
-                </span>
-              </div>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                Aerial: {result.aerial_distance_km} km &times; 1.3 road factor
-              </p>
+        result.status === 'coordinate_unavailable' ? (
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl flex gap-3 text-sm">
+            <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-amber-500" />
+            <div>
+              <span className="font-semibold block mb-0.5">Transport Estimate Unavailable</span>
+              {result.message || 'Transport estimate is unavailable for this market.'}
             </div>
-
-            {/* Base transport cost */}
-            <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
-              <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                Base Transport Cost
-              </span>
-              <div className="flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
-                <span className="text-xs text-zinc-400">Rs.</span>
-                <span className="text-xl font-bold">
-                  {result.base_transport_cost_rs.toLocaleString()}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Distance + Cost cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Distance */}
+              <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
+                <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                  Road Distance
                 </span>
-              </div>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                Rate: Rs.{result.cost_per_quintal_per_km}/qtl/km
-              </p>
-            </div>
-
-            {/* Quantity-based cost */}
-            <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
-              <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                {result.quantity_kg ? `Cost for ${result.quantity_kg} kg` : 'Quantity Cost'}
-              </span>
-              {result.estimated_quantity_transport_cost_rs !== null ? (
-                <>
-                  <div className="flex items-center gap-1 text-emerald-600 dark:text-brand-500">
-                    <IndianRupee className="w-4 h-4" />
-                    <span className="text-xl font-bold">
-                      {result.estimated_quantity_transport_cost_rs.toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                    Total for {result.quantity_kg} kg to {result.market_name}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-zinc-400 dark:text-zinc-500">
-                  Enter quantity above for total estimate
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-xl font-bold">
+                    {result.estimated_road_distance_km} <span className="text-xs font-normal text-zinc-400">km</span>
+                  </span>
+                </div>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                  Aerial: {result.aerial_distance_km} km &times; 1.3 road factor
                 </p>
-              )}
+              </div>
+
+              {/* Base transport cost */}
+              <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
+                <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                  Base Transport Cost
+                </span>
+                <div className="flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
+                  <span className="text-xs text-zinc-400">Rs.</span>
+                  <span className="text-xl font-bold">
+                    {result.base_transport_cost_rs?.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                  Rate: Rs.{result.cost_per_quintal_per_km}/qtl/km
+                </p>
+              </div>
+
+              {/* Quantity-based cost */}
+              <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-1.5">
+                <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                  {result.quantity_kg ? `Cost for ${result.quantity_kg} kg` : 'Quantity Cost'}
+                </span>
+                {result.estimated_quantity_transport_cost_rs !== null ? (
+                  <>
+                    <div className="flex items-center gap-1 text-emerald-600 dark:text-brand-500">
+                      <IndianRupee className="w-4 h-4" />
+                      <span className="text-xl font-bold">
+                        {result.estimated_quantity_transport_cost_rs?.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                      Total for {result.quantity_kg} kg to {result.market_name}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-zinc-400 dark:text-zinc-500">
+                    Enter quantity above for total estimate
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Mandi info + disclaimer */}
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg space-y-1">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                <span className="font-medium">Mandi:</span> {result.market_name},&nbsp;
+                {result.district}, {result.state}&nbsp;
+                <span className="text-zinc-400">
+                  ({result.mandi_lat !== null ? result.mandi_lat.toFixed(4) : ''}, {result.mandi_lng !== null ? result.mandi_lng.toFixed(4) : ''})
+                </span>
+              </p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic leading-relaxed">
+                {result.note}
+              </p>
             </div>
           </div>
-
-          {/* Mandi info + disclaimer */}
-          <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg space-y-1">
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              <span className="font-medium">Mandi:</span> {result.market_name},&nbsp;
-              {result.district}, {result.state}&nbsp;
-              <span className="text-zinc-400">({result.mandi_lat.toFixed(4)}, {result.mandi_lng.toFixed(4)})</span>
-            </p>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic leading-relaxed">
-              {result.note}
-            </p>
-          </div>
-        </div>
+        )
       )}
     </div>
   );

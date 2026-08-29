@@ -266,10 +266,9 @@ class TestMarketServiceAnalyzerIntegration(unittest.TestCase):
         except ImportError:
             patch_target = 'market_service.requests.get'
 
-        t = requests.Timeout("forced")
-        f = requests.RequestException("forced")
         with patch(patch_target) as mock_get:
-            mock_get.side_effect = [t, f]
+            # Provide enough exceptions to cover all commodity variants plus fallback API calls
+            mock_get.side_effect = [requests.RequestException("forced")] * 10
             service = MarketService()
             service.api_key = "dummy_api_key"
             return service.get_market_prices(commodity=commodity, state=state)

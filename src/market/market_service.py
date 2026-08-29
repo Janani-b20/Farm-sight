@@ -24,12 +24,13 @@ class MarketService:
         self.resource_id: str = os.getenv("DATA_GOV_RESOURCE_ID", "9ef84268-d588-465a-a308-a864a43d0070")
         self.base_url: str = f"https://api.data.gov.in/resource/{self.resource_id}"
 
-        # Mapping of user-friendly names to API commodity values
-        self.commodity_mapping: Dict[str, str] = {
-            "paddy": "Paddy(Dhan)",
-            "cotton": "Cotton",
-            "groundnut": "Groundnut"
+        # Mapping of user-friendly names to possible API commodity values (list of variants)
+        self.commodity_variants: Dict[str, List[str]] = {
+            "paddy": ["Paddy(Dhan)", "Paddy(Common)", "Paddy(Basmati)", "Rice"],
+            "cotton": ["Cotton"],
+            "groundnut": ["Groundnut", "Groundnut pods(raw)", "Ground Nut Seed", "Groundnut(Split)"]
         }
+
 
         # Standard browser User-Agent to avoid data.gov.in WAF/firewall connection blocking
         self.headers: Dict[str, str] = {
@@ -54,75 +55,80 @@ class MarketService:
                 "Please configure it in your environment or .env file."
             )
 
-        # Map commodity to the API's expected spelling
-        normalized_commodity = commodity.lower().strip()
-        api_commodity = self.commodity_mapping.get(normalized_commodity)
-
-        if not api_commodity:
-            api_commodity = commodity.title().strip()
-
         # Construct query parameters (do not log this to avoid key leakage)
-        params: Dict[str, Any] = {
+        params_base: Dict[str, Any] = {
             "api-key": self.api_key,
             "format": "json",
             "limit": limit,
             "filters[state]": state,
-            "filters[commodity]": api_commodity
         }
-
         if district:
-            params["filters[district]"] = district
+            params_base["filters[district]"] = district
         if market:
-            params["filters[market]"] = market
+            params_base["filters[market]"] = market
 
-        # Try Primary Source
-        logger.info("Trying primary data.gov.in market API")
-        try:
-            response = requests.get(
-                self.base_url,
-                params=params,
-                headers=self.headers,
-                timeout=(5, 10)  # Reasonable timeouts: 5s connect, 10s read
-            )
-            response.raise_for_status()
+        # Determine possible variants for the requested commodity
+        normalized_commodity = commodity.lower().strip()
+        variants = self.commodity_variants.get(normalized_commodity)
+        if not variants:
+            # Fallback to title-cased commodity if not in mapping
+            variants = [commodity.title().strip()]
 
-            data = response.json()
-            if "records" not in data:
-                logger.warning("API response does not contain 'records' field.")
-                raise ValueError("API response missing 'records' field")
+        # Try each variant against the primary data.gov.in API until records are found
+        records_found = False
+        parsed_records = []
+        last_error = None
 
-            raw_records = data["records"]
-            if not raw_records:
-                logger.info(f"No records found in primary API for '{commodity}' in '{state}'. Trying fallback.")
-                raise ValueError(f"No primary records for '{commodity}' in '{state}'")
+        for api_commodity in variants:
+            params = dict(params_base)  # shallow copy
+            params["filters[commodity]"] = api_commodity
+            logger.info(f"Trying primary data.gov.in market API with commodity variant '{api_commodity}'")
+            try:
+                response = requests.get(
+                    self.base_url,
+                    params=params,
+                    headers=self.headers,
+                    timeout=(5, 10)
+                )
+                response.raise_for_status()
+                data = response.json()
+                raw_records = data.get("records", [])
+                if raw_records:
+                    # Successful fetch with this variant
+                    for record in raw_records:
+                        parsed = self._parse_record(record)
+                        parsed["data_source"] = "data.gov.in"
+                        parsed_records.append(parsed)
+                    records_found = True
+                    break
+                else:
+                    logger.info(f"No records found for commodity variant '{api_commodity}'")
+            except (requests.Timeout, requests.RequestException, ValueError) as e:
+                logger.warning(
+                    f"Primary API request failed for variant '{api_commodity}': {e}"
+                )
+                last_error = e
+                # Continue to next variant
+                continue
 
-            parsed_records = []
-            for record in raw_records:
-                parsed = self._parse_record(record)
-                parsed["data_source"] = "data.gov.in"
-                parsed_records.append(parsed)
-
+        if records_found:
             return parsed_records
 
-        except (requests.Timeout, requests.RequestException, ValueError) as e:
-            # If ValueError was raised for missing env key, re-raise it directly
-            if not self.api_key or "DATA_GOV_API_KEY" in str(e):
-                raise
+        # If none of the variants yielded records, proceed to fallback logic
+        err_msg = str(last_error) if last_error else f"No records found for any variant of '{commodity}' in '{state}'"
+        logger.warning(f"Primary API unavailable or returned no records ({err_msg}); trying fallback market API")
 
-            # Required warning log on primary timeout, network error, or empty response
-            logger.warning(f"Primary API unavailable or returned no records ({e}); trying fallback market API")
+        # Try Secondary Source (Farmer.in)
+        try:
+            records = self._fetch_secondary(commodity, state, district, market)
+            logger.info("Fallback market API succeeded")
+            return records
+        except Exception as sec_e:
+            logger.warning(f"Fallback market API failed: {sec_e}")
 
-            # Try Secondary Source (Farmer.in)
-            try:
-                records = self._fetch_secondary(commodity, state, district, market)
-                logger.info("Fallback market API succeeded")
-                return records
-            except Exception as sec_e:
-                logger.warning(f"Fallback market API failed: {sec_e}")
-
-                # Both APIs failed, load local fallback
-                logger.warning("Both APIs failed; using local fallback data")
-                return self._fetch_local_fallback(commodity, state, district, market)
+            # Both APIs failed, load local fallback
+            logger.warning("Both APIs failed; using local fallback data")
+            return self._fetch_local_fallback(commodity, state, district, market)
 
     def _fetch_secondary(
         self,

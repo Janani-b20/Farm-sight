@@ -14,17 +14,19 @@ export interface TransportEstimateResponse {
   market_name: string;
   district: string;
   state: string;
-  mandi_lat: number;
-  mandi_lng: number;
+  mandi_lat: number | null;
+  mandi_lng: number | null;
   user_lat: number;
   user_lng: number;
-  aerial_distance_km: number;
-  estimated_road_distance_km: number;
-  cost_per_quintal_per_km: number;
-  base_transport_cost_rs: number;
+  aerial_distance_km: number | null;
+  estimated_road_distance_km: number | null;
+  cost_per_quintal_per_km: number | null;
+  base_transport_cost_rs: number | null;
   quantity_kg: number | null;
   estimated_quantity_transport_cost_rs: number | null;
   note: string;
+  status?: string;
+  message?: string;
 }
 
 export interface TransportRequestParams {

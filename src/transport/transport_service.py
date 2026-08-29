@@ -95,7 +95,27 @@ class TransportService:
             estimated_quantity_transport_cost_rs (or None),
             note
         """
-        mandi = self._lookup_mandi(market_name, district, state)
+        try:
+            mandi = self._lookup_mandi(market_name, district, state)
+        except MandiNotFoundError as e:
+            return {
+                "market_name": market_name,
+                "district": district,
+                "state": state,
+                "mandi_lat": None,
+                "mandi_lng": None,
+                "user_lat": user_lat,
+                "user_lng": user_lng,
+                "aerial_distance_km": None,
+                "estimated_road_distance_km": None,
+                "cost_per_quintal_per_km": None,
+                "base_transport_cost_rs": None,
+                "quantity_kg": quantity_kg,
+                "estimated_quantity_transport_cost_rs": None,
+                "status": "coordinate_unavailable",
+                "message": "Transport estimate is unavailable for this market.",
+                "note": str(e),
+            }
 
         aerial_km = self._haversine(
             user_lat, user_lng, mandi["lat"], mandi["lng"]
@@ -119,6 +139,8 @@ class TransportService:
             "base_transport_cost_rs": base_cost,
             "quantity_kg": quantity_kg,
             "estimated_quantity_transport_cost_rs": None,
+            "status": "success",
+            "message": "Transport estimate calculated successfully.",
             "note": (
                 "Distance is a Haversine aerial estimate with a 1.3x road correction factor. "
                 "Actual road distance may vary. "
@@ -175,10 +197,19 @@ class TransportService:
         """
         Looks up mandi coordinates by market_name + state match.
         Falls back to market_name only if state is ambiguous.
+
+        Also handles verbose APMC committee names returned by data.gov.in, e.g.:
+          "The Agricultural Produce Market Committee-Amreli"
+        These are normalized by stripping the known committee prefix and
+        extracting the short city name for matching. This is an exact prefix
+        strip — not fuzzy matching — and always requires district+state match
+        to prevent cross-state collisions.
+
         Raises MandiNotFoundError if no match is found.
         """
         market_key = market_name.lower().strip()
         state_key = state.lower().strip()
+        district_key = district.lower().strip()
 
         # Priority 1: exact match on market + state
         for entry in self._coordinates:
@@ -197,11 +228,64 @@ class TransportService:
                 )
                 return entry
 
+        # Priority 3: APMC committee name normalization.
+        # data.gov.in returns verbose names like:
+        #   "The Agricultural Produce Market Committee-Amreli"
+        #   "Agricultural Produce Market Committee, Rajkot"
+        # Strip known prefixes and extract the city token, then re-run
+        # Priority-1 lookup (district + state required to prevent collisions).
+        normalized = self._normalize_apmc_name(market_key)
+        if normalized and normalized != market_key:
+            for entry in self._coordinates:
+                if (
+                    entry.get("market", "").lower().strip() == normalized
+                    and entry.get("state", "").lower().strip() == state_key
+                    and entry.get("district", "").lower().strip() == district_key
+                ):
+                    logger.info(
+                        f"Mandi '{market_name}' resolved via APMC name normalization "
+                        f"to coordinate key '{normalized}' "
+                        f"(district='{district}', state='{state}')."
+                    )
+                    return entry
+
         raise MandiNotFoundError(
             f"No coordinates found for mandi '{market_name}' "
             f"(district='{district}', state='{state}'). "
             "Please expand mandi_coordinates.json."
         )
+
+    @staticmethod
+    def _normalize_apmc_name(market_key: str) -> str:
+        """
+        Strips known verbose APMC/committee prefixes from a lowercased market
+        name to extract the short city name used as the coordinate key.
+
+        Examples
+        --------
+        "the agricultural produce market committee-amreli" -> "amreli"
+        "agricultural produce market committee, rajkot"    -> "rajkot"
+        "apmc amreli"                                      -> "amreli"
+
+        Only strips clearly identifiable prefixes. Returns the original string
+        unchanged if no known prefix is detected.
+        """
+        import re
+
+        # Known verbose prefix patterns (lowercased)
+        patterns = [
+            # "The Agricultural Produce Market Committee-<city>"
+            r"^the\s+agricultural\s+produce\s+market\s+committee[-,\s]+",
+            # "Agricultural Produce Market Committee-<city>" / ", <city>"
+            r"^agricultural\s+produce\s+market\s+committee[-,\s]+",
+            # "APMC <city>" / "APMC-<city>"
+            r"^apmc[-\s]+",
+        ]
+        for pattern in patterns:
+            result = re.sub(pattern, "", market_key).strip().rstrip(",").strip()
+            if result and result != market_key:
+                return result
+        return market_key
 
     @staticmethod
     def _load_coordinates() -> List[Dict[str, Any]]:

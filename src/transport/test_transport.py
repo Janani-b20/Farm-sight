@@ -82,14 +82,20 @@ class TestMandiLookup(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_unknown_mandi_raises_in_calculate(self):
-        with self.assertRaises(MandiNotFoundError):
-            self.service.calculate_transport(
-                market_name="GhostMandi",
-                district="UnknownDistrict",
-                state="UnknownState",
-                user_lat=22.0,
-                user_lng=71.0,
-            )
+        result = self.service.calculate_transport(
+            market_name="GhostMandi",
+            district="UnknownDistrict",
+            state="UnknownState",
+            user_lat=22.0,
+            user_lng=71.0,
+        )
+        self.assertEqual(result["status"], "coordinate_unavailable")
+        self.assertIsNone(result["mandi_lat"])
+        self.assertIsNone(result["mandi_lng"])
+        self.assertIsNone(result["aerial_distance_km"])
+        self.assertIsNone(result["estimated_road_distance_km"])
+        self.assertIsNone(result["base_transport_cost_rs"])
+        self.assertIsNone(result["estimated_quantity_transport_cost_rs"])
 
     def test_case_insensitive_lookup(self):
         """Market name lookup should be case-insensitive."""
@@ -100,6 +106,103 @@ class TestMandiLookup(unittest.TestCase):
         """Leading/trailing whitespace in market name should be tolerated."""
         mandi = self.service.get_mandi_coordinates("  gondal  ", "Rajkot", "Gujarat")
         self.assertIsNotNone(mandi)
+
+
+class TestAPMCNameNormalization(unittest.TestCase):
+    """
+    Tests for APMC verbose committee name normalization.
+    Covers the exact market names returned by the live data.gov.in API
+    that differ from the short city-key names in mandi_coordinates.json.
+    """
+
+    def setUp(self):
+        self.service = TransportService()
+
+    def test_full_apmc_name_amreli_resolves(self):
+        """
+        'The Agricultural Produce Market Committee-Amreli' (live data.gov.in name)
+        must resolve to the Amreli mandi coordinate entry via APMC normalization.
+        """
+        mandi = self.service.get_mandi_coordinates(
+            "The Agricultural Produce Market Committee-Amreli",
+            district="Amreli",
+            state="Gujarat",
+        )
+        self.assertIsNotNone(
+            mandi,
+            "Amreli APMC mandi must resolve — coordinate entry exists in mandi_coordinates.json",
+        )
+        self.assertAlmostEqual(mandi["lat"], 21.6038, places=3)
+        self.assertAlmostEqual(mandi["lng"], 71.2221, places=3)
+
+    def test_full_apmc_name_amreli_calculate_transport(self):
+        """
+        calculate_transport must succeed for the live data.gov.in Amreli market name.
+        """
+        result = self.service.calculate_transport(
+            market_name="The Agricultural Produce Market Committee-Amreli",
+            district="Amreli",
+            state="Gujarat",
+            user_lat=21.6038,
+            user_lng=71.2221,
+            quantity_kg=1000.0,
+        )
+        self.assertIn("estimated_road_distance_km", result)
+        self.assertIn("base_transport_cost_rs", result)
+        self.assertIsNotNone(result["estimated_quantity_transport_cost_rs"])
+
+    def test_apmc_prefix_without_the_resolves(self):
+        """
+        'Agricultural Produce Market Committee-Amreli' (without 'The') must also resolve.
+        """
+        mandi = self.service.get_mandi_coordinates(
+            "Agricultural Produce Market Committee-Amreli",
+            district="Amreli",
+            state="Gujarat",
+        )
+        self.assertIsNotNone(mandi)
+        self.assertAlmostEqual(mandi["lat"], 21.6038, places=3)
+
+    def test_apmc_shorthand_resolves(self):
+        """'APMC Amreli' shorthand must also resolve."""
+        mandi = self.service.get_mandi_coordinates(
+            "APMC Amreli", district="Amreli", state="Gujarat"
+        )
+        self.assertIsNotNone(mandi)
+
+    def test_normalize_does_not_cross_state(self):
+        """
+        APMC normalization must NOT match a mandi from a different state/district
+        even if the city name token matches.
+        """
+        # "The Agricultural Produce Market Committee-Rajkot" with wrong state
+        result = self.service.get_mandi_coordinates(
+            "The Agricultural Produce Market Committee-Rajkot",
+            district="NoDistrict",
+            state="NoState",
+        )
+        # Must return None — no cross-state/district collision allowed
+        self.assertIsNone(result)
+
+    def test_normalize_apmc_name_utility(self):
+        """Unit test for the _normalize_apmc_name static helper."""
+        cases = [
+            ("the agricultural produce market committee-amreli", "amreli"),
+            ("agricultural produce market committee-amreli", "amreli"),
+            ("agricultural produce market committee, rajkot", "rajkot"),
+            ("apmc amreli", "amreli"),
+            ("apmc-rajkot", "rajkot"),
+            # Non-APMC name must pass through unchanged
+            ("gondal", "gondal"),
+            ("rajkot", "rajkot"),
+        ]
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                self.assertEqual(
+                    TransportService._normalize_apmc_name(raw),
+                    expected,
+                    f"normalize_apmc_name('{raw}') should return '{expected}'",
+                )
 
 
 class TestTransportCostCalculation(unittest.TestCase):
@@ -265,8 +368,8 @@ class TestTransportAPIEndpoint(unittest.TestCase):
         self.assertIsNotNone(data["estimated_quantity_transport_cost_rs"])
         self.assertEqual(data["quantity_kg"], 500.0)
 
-    def test_transport_endpoint_unknown_mandi_404(self):
-        """Unknown mandi must return 404."""
+    def test_transport_endpoint_unknown_mandi_graceful(self):
+        """Unknown mandi must return 200 with coordinate_unavailable status."""
         response = self.client.get(
             "/api/transport",
             params={
@@ -277,7 +380,11 @@ class TestTransportAPIEndpoint(unittest.TestCase):
                 "user_lng": 71.0,
             },
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "coordinate_unavailable")
+        self.assertIsNone(data["estimated_road_distance_km"])
+        self.assertIsNone(data["base_transport_cost_rs"])
 
     def test_transport_endpoint_missing_params_422(self):
         """Request with missing required params must return 422."""
