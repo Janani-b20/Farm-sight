@@ -151,7 +151,10 @@ class MarketAnalyzer:
                 quantity_kg, best_market["modal_price"]
             )
 
+        data_source = self.records[0].get("data_source", "data.gov.in") if self.records else "data.gov.in"
+
         return {
+            "data_source": data_source,
             "total_records_processed": len(self.raw_records),
             "valid_records_analyzed": len(self.records),
             "best_market": {

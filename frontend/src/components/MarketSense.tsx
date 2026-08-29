@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  TrendingUp as StableIcon, 
-  MapPin, 
-  IndianRupee, 
-  Scale, 
+import {
+  TrendingUp,
+  TrendingDown,
+  MapPin,
+  IndianRupee,
   AlertCircle,
   HelpCircle,
-  ArrowRight,
   Loader2
 } from 'lucide-react';
+import { fetchMarketAnalysis, MarketAnalysisResponse, MarketRecord } from '../services/marketApi';
+import TransportEstimator from './TransportEstimator';
 
 interface MarketSenseProps {
   darkMode?: boolean;
@@ -30,7 +29,7 @@ export default function MarketSense({}: MarketSenseProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Result State
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<MarketAnalysisResponse | null>(null);
 
   // LIVE ANALYSIS ENGINE
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -41,38 +40,8 @@ export default function MarketSense({}: MarketSenseProps) {
     setError(null);
     setAnalysisResult(null);
 
-    // Build query parameters
-    const params = new URLSearchParams({
-      commodity: commodity,
-      state: stateName
-    });
-
-    if (district.trim()) {
-      params.append('district', district.trim());
-    }
-    if (market.trim()) {
-      params.append('market', market.trim());
-    }
-    if (quantity.trim()) {
-      params.append('quantity_kg', quantity.trim());
-    }
-
     try {
-      // Calls local proxy endpoint (Vite forwards this to http://localhost:8000)
-      const response = await fetch(`/api/market?${params.toString()}`);
-      
-      if (!response.ok) {
-        let errorMessage = 'An unexpected error occurred.';
-        try {
-          const errData = await response.json();
-          errorMessage = errData.detail || errorMessage;
-        } catch {
-          errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
+      const data = await fetchMarketAnalysis(commodity, stateName, district, market, quantity);
       setAnalysisResult(data);
       setShowResults(true);
     } catch (err: any) {
@@ -85,7 +54,7 @@ export default function MarketSense({}: MarketSenseProps) {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Introduction Banner */}
       <div className="p-6 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm">
         <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">MarketSense</h2>
@@ -95,16 +64,16 @@ export default function MarketSense({}: MarketSenseProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
+
         {/* Input Parameters Panel */}
         <form onSubmit={handleAnalyze} className="lg:col-span-1 p-5 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-4">
           <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm uppercase tracking-wider">Analysis Options</h3>
-          
+
           {/* Commodity Selector */}
           <div className="flex flex-col">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Select Crop / Commodity *</label>
-            <select 
-              value={commodity} 
+            <select
+              value={commodity}
               onChange={(e) => setCommodity(e.target.value)}
               className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-sm text-zinc-950 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
               required
@@ -118,8 +87,8 @@ export default function MarketSense({}: MarketSenseProps) {
           {/* State Input */}
           <div className="flex flex-col">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">State Name *</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={stateName}
               onChange={(e) => setStateName(e.target.value)}
               placeholder="e.g. Gujarat, Punjab"
@@ -131,8 +100,8 @@ export default function MarketSense({}: MarketSenseProps) {
           {/* District Input */}
           <div className="flex flex-col">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">District (Optional)</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               placeholder="e.g. Amreli, Amritsar"
@@ -143,8 +112,8 @@ export default function MarketSense({}: MarketSenseProps) {
           {/* Mandi/Market Input */}
           <div className="flex flex-col">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Mandi / Market (Optional)</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={market}
               onChange={(e) => setMarket(e.target.value)}
               placeholder="e.g. Bhavnagar, Tarn Taran"
@@ -155,8 +124,8 @@ export default function MarketSense({}: MarketSenseProps) {
           {/* Quantity Input */}
           <div className="flex flex-col">
             <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Quantity (kg)</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="e.g. 1000"
@@ -165,8 +134,8 @@ export default function MarketSense({}: MarketSenseProps) {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-brand-500/50 text-white dark:text-zinc-950 rounded-lg py-2.5 text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
           >
@@ -227,23 +196,39 @@ export default function MarketSense({}: MarketSenseProps) {
 
           {showResults && !loading && analysisResult && analysisResult.valid_records_analyzed > 0 && (
             <div className="space-y-6 animate-fade-in">
-              
+
+              {/* Data Source Transparency Badge */}
+              <div className="flex items-center justify-between px-1 text-xs">
+                <span className="text-zinc-500 dark:text-zinc-400">Data Source:</span>
+                {analysisResult.data_source === 'local_fallback' || analysisResult.data_source === 'farmer.in' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium border border-amber-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    🟡 Backup market data
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-brand-500 font-medium border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    🟢 Live data.gov.in
+                  </span>
+                )}
+              </div>
+
               {/* KPI Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
+
                 {/* Best Market */}
                 <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-2">
                   <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Best Market</span>
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-brand-500">
                     <MapPin className="w-4 h-4" />
-                    <span className="font-bold text-sm">{analysisResult.best_market.market}</span>
+                    <span className="font-bold text-sm">{analysisResult.best_market?.market || 'N/A'}</span>
                   </div>
                   <div className="text-xl font-bold flex items-baseline gap-1">
                     <span className="text-xs text-zinc-400">Rs.</span>
-                    {analysisResult.best_market.modal_price}
+                    {analysisResult.best_market?.modal_price || 0}
                     <span className="text-xs text-zinc-400 font-normal">/ Qtl</span>
                   </div>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Variety: {analysisResult.best_market.variety}</p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Variety: {analysisResult.best_market?.variety || 'N/A'}</p>
                 </div>
 
                 {/* Price extremes */}
@@ -298,7 +283,7 @@ export default function MarketSense({}: MarketSenseProps) {
                       {analysisResult.estimated_gross_value.gross_value_rs.toLocaleString()}
                     </div>
                     <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
-                      Based on quantity of {analysisResult.estimated_gross_value.quantity_kg} kg @ best market price (Rs. {(analysisResult.best_market.modal_price / 100).toFixed(2)}/kg)
+                      Based on quantity of {analysisResult.estimated_gross_value.quantity_kg} kg @ best market price (Rs. {((analysisResult.best_market?.modal_price ?? 0) / 100).toFixed(2)}/kg)
                     </div>
                   </div>
                 </div>
@@ -321,18 +306,19 @@ export default function MarketSense({}: MarketSenseProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                      {analysisResult.market_comparison.map((item: any, index: number) => (
-                        <tr 
-                          key={index} 
+                      {analysisResult.market_comparison.map((item: MarketRecord, index: number) => (
+                        <tr
+                          key={index}
                           className={`hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors ${
-                            item.market === analysisResult.best_market.market 
-                              ? 'bg-emerald-500/5 dark:bg-emerald-950/10 font-medium' 
+                            item.market === (analysisResult.best_market ? analysisResult.best_market.market : '')
+
+                              ? 'bg-emerald-500/5 dark:bg-emerald-950/10 font-medium'
                               : ''
                           }`}
                         >
                           <td className="px-5 py-3 flex items-center gap-1.5">
                             {item.market}
-                            {item.market === analysisResult.best_market.market && (
+                            {item.market === analysisResult.best_market?.market && (
                               <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-brand-500 rounded px-1.5 py-0.5 font-semibold">Best</span>
                             )}
                           </td>
@@ -347,6 +333,17 @@ export default function MarketSense({}: MarketSenseProps) {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Transportation Estimate */}
+              {/* userLat / userLng are omitted intentionally — wire from live-location context when merged */}
+              <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm p-5">
+                <TransportEstimator
+                  marketName={analysisResult.best_market?.market}
+                  district={analysisResult.best_market?.district}
+                  state={analysisResult.best_market?.state}
+                  quantityKg={quantity ? parseFloat(quantity) : undefined}
+                />
               </div>
 
             </div>

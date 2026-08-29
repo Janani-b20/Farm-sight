@@ -33,6 +33,127 @@
     "arrival_date": "28/08/2026"
   },
   {
+    "commodity": "Paddy(Dhan)",
+    "state": "Punjab",
+    "district": "Ludhiana",
+    "market": "Ludhiana",
+    "variety": "Parmal",
+    "minimum_price": 2080.0,
+    "maximum_price": 2280.0,
+    "modal_price": 2180.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Tamil Nadu",
+    "district": "Thanjavur",
+    "market": "Thanjavur",
+    "variety": "Sona Masuri",
+    "minimum_price": 2000.0,
+    "maximum_price": 2250.0,
+    "modal_price": 2100.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Tamil Nadu",
+    "district": "Thanjavur",
+    "market": "Kumbakonam",
+    "variety": "Sona Masuri",
+    "minimum_price": 1980.0,
+    "maximum_price": 2200.0,
+    "modal_price": 2080.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Tamil Nadu",
+    "district": "Tiruvarur",
+    "market": "Nagapattinam",
+    "variety": "ADT-43",
+    "minimum_price": 2050.0,
+    "maximum_price": 2300.0,
+    "modal_price": 2150.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Tamil Nadu",
+    "district": "Trichy",
+    "market": "Srirangam",
+    "variety": "ADT-43",
+    "minimum_price": 2020.0,
+    "maximum_price": 2220.0,
+    "modal_price": 2120.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "West Bengal",
+    "district": "Bardhaman",
+    "market": "Burdwan",
+    "variety": "Minikit",
+    "minimum_price": 1900.0,
+    "maximum_price": 2100.0,
+    "modal_price": 2000.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "West Bengal",
+    "district": "Murshidabad",
+    "market": "Berhampore",
+    "variety": "Minikit",
+    "minimum_price": 1880.0,
+    "maximum_price": 2080.0,
+    "modal_price": 1980.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "West Bengal",
+    "district": "Hooghly",
+    "market": "Arambag",
+    "variety": "Swarna",
+    "minimum_price": 1950.0,
+    "maximum_price": 2150.0,
+    "modal_price": 2050.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Andhra Pradesh",
+    "district": "West Godavari",
+    "market": "Bhimavaram",
+    "variety": "BPT-5204",
+    "minimum_price": 2100.0,
+    "maximum_price": 2350.0,
+    "modal_price": 2200.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Andhra Pradesh",
+    "district": "East Godavari",
+    "market": "Rajahmundry",
+    "variety": "BPT-5204",
+    "minimum_price": 2080.0,
+    "maximum_price": 2300.0,
+    "modal_price": 2180.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Andhra Pradesh",
+    "district": "Krishna",
+    "market": "Vijayawada",
+    "variety": "Sona Masuri",
+    "minimum_price": 2050.0,
+    "maximum_price": 2280.0,
+    "modal_price": 2150.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
     "commodity": "Cotton",
     "state": "Gujarat",
     "district": "Amreli",
@@ -66,6 +187,94 @@
     "arrival_date": "28/08/2026"
   },
   {
+    "commodity": "Cotton",
+    "state": "Gujarat",
+    "district": "Surendranagar",
+    "market": "Wadhwan",
+    "variety": "Shankar-6",
+    "minimum_price": 6750.0,
+    "maximum_price": 7150.0,
+    "modal_price": 6950.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Maharashtra",
+    "district": "Yavatmal",
+    "market": "Yavatmal",
+    "variety": "H-4",
+    "minimum_price": 6600.0,
+    "maximum_price": 7050.0,
+    "modal_price": 6800.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Maharashtra",
+    "district": "Akola",
+    "market": "Akola",
+    "variety": "H-4",
+    "minimum_price": 6500.0,
+    "maximum_price": 6980.0,
+    "modal_price": 6700.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Maharashtra",
+    "district": "Wardha",
+    "market": "Wardha",
+    "variety": "Desi",
+    "minimum_price": 6400.0,
+    "maximum_price": 6900.0,
+    "modal_price": 6620.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Maharashtra",
+    "district": "Amravati",
+    "market": "Amravati",
+    "variety": "H-4",
+    "minimum_price": 6550.0,
+    "maximum_price": 7000.0,
+    "modal_price": 6750.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Telangana",
+    "district": "Warangal",
+    "market": "Warangal",
+    "variety": "Desi",
+    "minimum_price": 6450.0,
+    "maximum_price": 6950.0,
+    "modal_price": 6680.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Telangana",
+    "district": "Adilabad",
+    "market": "Adilabad",
+    "variety": "Desi",
+    "minimum_price": 6400.0,
+    "maximum_price": 6900.0,
+    "modal_price": 6630.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Telangana",
+    "district": "Nizamabad",
+    "market": "Nizamabad",
+    "variety": "H-4",
+    "minimum_price": 6500.0,
+    "maximum_price": 6980.0,
+    "modal_price": 6720.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
     "commodity": "Groundnut",
     "state": "Gujarat",
     "district": "Rajkot",
@@ -96,6 +305,83 @@
     "minimum_price": 5900.0,
     "maximum_price": 6300.0,
     "modal_price": 6100.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Gujarat",
+    "district": "Amreli",
+    "market": "Amreli",
+    "variety": "Java",
+    "minimum_price": 5800.0,
+    "maximum_price": 6200.0,
+    "modal_price": 6000.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Andhra Pradesh",
+    "district": "Kurnool",
+    "market": "Kurnool",
+    "variety": "Bold",
+    "minimum_price": 5700.0,
+    "maximum_price": 6200.0,
+    "modal_price": 5950.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Andhra Pradesh",
+    "district": "Nellore",
+    "market": "Nellore",
+    "variety": "TMV-2",
+    "minimum_price": 5650.0,
+    "maximum_price": 6100.0,
+    "modal_price": 5880.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Andhra Pradesh",
+    "district": "Chittoor",
+    "market": "Tirupati",
+    "variety": "TMV-2",
+    "minimum_price": 5700.0,
+    "maximum_price": 6150.0,
+    "modal_price": 5920.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Karnataka",
+    "district": "Kalaburagi",
+    "market": "Kalaburagi",
+    "variety": "Bold",
+    "minimum_price": 5600.0,
+    "maximum_price": 6050.0,
+    "modal_price": 5820.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Karnataka",
+    "district": "Raichur",
+    "market": "Raichur",
+    "variety": "Java",
+    "minimum_price": 5550.0,
+    "maximum_price": 6000.0,
+    "modal_price": 5780.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Karnataka",
+    "district": "Davangere",
+    "market": "Davangere",
+    "variety": "Bold",
+    "minimum_price": 5620.0,
+    "maximum_price": 6080.0,
+    "modal_price": 5850.0,
     "arrival_date": "28/08/2026"
   }
 ]

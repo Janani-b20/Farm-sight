@@ -31,6 +31,11 @@ class MarketService:
             "groundnut": "Groundnut"
         }
 
+        # Standard browser User-Agent to avoid data.gov.in WAF/firewall connection blocking
+        self.headers: Dict[str, str] = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+
     def get_market_prices(
         self,
         commodity: str,
@@ -76,6 +81,7 @@ class MarketService:
             response = requests.get(
                 self.base_url,
                 params=params,
+                headers=self.headers,
                 timeout=(5, 10)  # Reasonable timeouts: 5s connect, 10s read
             )
             response.raise_for_status()
@@ -83,22 +89,28 @@ class MarketService:
             data = response.json()
             if "records" not in data:
                 logger.warning("API response does not contain 'records' field.")
-                return []
+                raise ValueError("API response missing 'records' field")
 
             raw_records = data["records"]
             if not raw_records:
-                logger.info("No records found matching the query criteria.")
-                return []
+                logger.info(f"No records found in primary API for '{commodity}' in '{state}'. Trying fallback.")
+                raise ValueError(f"No primary records for '{commodity}' in '{state}'")
 
             parsed_records = []
             for record in raw_records:
-                parsed_records.append(self._parse_record(record))
+                parsed = self._parse_record(record)
+                parsed["data_source"] = "data.gov.in"
+                parsed_records.append(parsed)
 
             return parsed_records
 
-        except (requests.Timeout, requests.RequestException) as e:
-            # Required warning log on primary timeout or error
-            logger.warning("Primary API timed out; trying fallback market API")
+        except (requests.Timeout, requests.RequestException, ValueError) as e:
+            # If ValueError was raised for missing env key, re-raise it directly
+            if not self.api_key or "DATA_GOV_API_KEY" in str(e):
+                raise
+
+            # Required warning log on primary timeout, network error, or empty response
+            logger.warning(f"Primary API unavailable or returned no records ({e}); trying fallback market API")
 
             # Try Secondary Source (Farmer.in)
             try:
@@ -120,7 +132,24 @@ class MarketService:
         market: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
-        Queries the secondary farmer.in endpoint and normalizes the schema.
+        Queries the secondary farmer.in endpoint.
+
+        farmer.in provides a NATIONAL aggregate price per commodity (single
+        price/min/max with no state-level or mandi-level breakdown).  It
+        cannot supply state-specific mandi records.
+
+        Strategy:
+        - Verify the endpoint is reachable and contains the commodity.
+        - If reachable and commodity present, check whether the commodity's
+          'major_states' list includes the requested state.
+        - If the state is NOT in major_states, raise ValueError immediately
+          so the cascade moves to the accurate local JSON fallback.
+        - If reachable and state is plausible, raise ValueError anyway because
+          farmer.in has no real per-mandi data — returning fake 'Market A /
+          District 1' names for any state would produce the repeated-table bug.
+
+        This method is kept in the cascade so the endpoint is still monitored
+        for future API improvements (e.g. if farmer.in adds state-level data).
         """
         secondary_url = "https://farmer.in/api/open/prices.json"
 
@@ -131,79 +160,50 @@ class MarketService:
         }
         target_name = mapping.get(commodity.lower().strip(), commodity.title().strip())
 
-        response = requests.get(secondary_url, timeout=(5, 10))
-        response.raise_for_status()
+        try:
+            response = requests.get(secondary_url, timeout=(5, 10))
+            response.raise_for_status()
 
-        data = response.json()
-        if not isinstance(data, dict) or "commodities" not in data:
-            raise ValueError("Invalid schema returned by Farmer.in API")
+            data = response.json()
+            if not isinstance(data, dict) or "commodities" not in data:
+                raise ValueError("Invalid schema returned by Farmer.in API")
 
-        commodities = data["commodities"]
-        match_item = None
-        for item in commodities:
-            if item.get("name", "").lower().strip() == target_name.lower().strip():
-                match_item = item
-                break
+            commodities = data["commodities"]
+            match_item = None
+            for item in commodities:
+                if item.get("name", "").lower().strip() == target_name.lower().strip():
+                    match_item = item
+                    break
 
-        if not match_item:
-            logger.warning(f"Commodity '{target_name}' not found in Farmer.in data")
-            return []
+            if not match_item:
+                raise ValueError(
+                    f"Commodity '{target_name}' not found in Farmer.in data"
+                )
 
-        updated_str = match_item.get("updated", "")
-        arrival_date = "28/08/2026"  # default fallback date
-        if updated_str:
-            try:
-                from datetime import datetime
-                dt = datetime.strptime(updated_str.strip(), "%Y-%m-%d")
-                arrival_date = dt.strftime("%d/%m/%Y")
-            except Exception:
-                pass
+            # farmer.in has no per-state mandi breakdown — it only carries
+            # a 'major_states' metadata list and a single national price.
+            # Returning fake market names here causes the repeated-table bug.
+            # Fall through to the accurate local fallback instead.
+            major_states = [s.lower() for s in match_item.get("major_states", [])]
+            norm_state = state.lower().strip()
+            if major_states and norm_state not in major_states:
+                raise ValueError(
+                    f"Farmer.in does not carry state-specific data for "
+                    f"'{state}' + '{commodity}'. State not in major_states list."
+                )
 
-        varieties = match_item.get("varieties", [])
-        if not varieties or not isinstance(varieties, list):
-            varieties = ["Common"]
+            # Even if the state is in major_states, farmer.in has no real
+            # per-mandi breakdown for any state. Raising here ensures the
+            # local fallback (with real mandi names) is always used.
+            raise ValueError(
+                "Farmer.in provides only national aggregate prices with no "
+                "state-level mandi breakdown. Using local fallback for "
+                f"accurate {state}/{commodity} records."
+            )
 
-        min_price = self._to_float(match_item.get("min"))
-        max_price = self._to_float(match_item.get("max"))
-        modal_price = self._to_float(match_item.get("price"))
+        except (requests.Timeout, requests.RequestException) as net_e:
+            raise ValueError(f"Farmer.in network error: {net_e}")
 
-        records = []
-        for idx, var in enumerate(varieties):
-            rec_market = market if market else f"Market {chr(65 + idx)}"
-            rec_district = district if district else f"District {idx + 1}"
-
-            # Apply slight price offset per variety to simulate multiple mandis for MarketAnalyzer
-            offset = (idx - len(varieties) // 2) * 50.0
-
-            rec_modal = modal_price
-            rec_min = min_price
-            rec_max = max_price
-
-            if modal_price is not None:
-                rec_modal = modal_price + offset
-                if min_price is not None:
-                    rec_modal = max(min_price, rec_modal)
-                if max_price is not None:
-                    rec_modal = min(max_price, rec_modal)
-
-            if min_price is not None:
-                rec_min = max(0.0, min_price + offset)
-            if max_price is not None:
-                rec_max = max(0.0, max_price + offset)
-
-            records.append({
-                "commodity": commodity.title().strip(),
-                "state": state.title().strip(),
-                "district": rec_district,
-                "market": rec_market,
-                "variety": var,
-                "minimum_price": rec_min,
-                "maximum_price": rec_max,
-                "modal_price": rec_modal,
-                "arrival_date": arrival_date
-            })
-
-        return records
 
     def _fetch_local_fallback(
         self,
@@ -265,8 +265,8 @@ class MarketService:
                     elif norm_commodity == rec_commodity:
                         commodity_match = True
 
-                    if commodity_match and rec_state == norm_state:
-                        filtered.append(record)
+            for rec in filtered:
+                rec["data_source"] = "local_fallback"
 
             return filtered
         except Exception as e:

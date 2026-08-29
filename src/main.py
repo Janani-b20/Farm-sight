@@ -17,6 +17,11 @@ except ImportError:
     from market_service import MarketService
     from market_analyzer import MarketAnalyzer
 
+try:
+    from transport.transport_service import TransportService, MandiNotFoundError
+except ImportError:
+    from transport_service import TransportService, MandiNotFoundError
+
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -96,4 +101,59 @@ def get_market_analysis(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected server error occurred: {str(e)}."
+        )
+
+
+# ---------------------------------------------------------------------------
+# Transportation / Distance Estimation endpoint
+# ---------------------------------------------------------------------------
+@app.get("/api/transport", status_code=status.HTTP_200_OK)
+def get_transport_estimate(
+    market_name: str = Query(..., description="Name of the target mandi/market"),
+    district: str = Query(..., description="District the mandi belongs to"),
+    state: str = Query(..., description="State the mandi belongs to"),
+    user_lat: float = Query(..., description="Farmer's latitude (decimal degrees)"),
+    user_lng: float = Query(..., description="Farmer's longitude (decimal degrees)"),
+    quantity_kg: Optional[float] = Query(None, description="Optional quantity in kg for cost estimation"),
+):
+    """
+    Estimates transport distance and cost from the farmer's location to a
+    specified mandi using the Haversine formula.
+
+    Integration note
+    ----------------
+    `user_lat` and `user_lng` will eventually come from the live-location
+    feature being developed by a teammate.  This endpoint is designed to
+    accept those coordinates as explicit parameters so no coupling to any
+    specific location implementation is required.
+    """
+    logger.info(
+        f"Transport estimate request: market={market_name}, district={district}, "
+        f"state={state}, user_lat={user_lat}, user_lng={user_lng}, quantity_kg={quantity_kg}"
+    )
+
+    transport_service = TransportService()
+
+    try:
+        result = transport_service.calculate_transport(
+            market_name=market_name,
+            district=district,
+            state=state,
+            user_lat=user_lat,
+            user_lng=user_lng,
+            quantity_kg=quantity_kg,
+        )
+        return result
+
+    except MandiNotFoundError as e:
+        logger.warning(f"Mandi not found: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in transport estimate: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected server error occurred: {str(e)}.",
         )

@@ -1,0 +1,73 @@
+[
+  {
+    "_comment": "Initial coordinate dataset for FarmSight TransportEstimator.",
+    "_note": "Coordinates sourced from publicly available geographic data for known Indian mandi locations.",
+    "_coverage": "Covers the mandis present in fallback_market_data.json: Paddy (Punjab), Cotton & Groundnut (Gujarat).",
+    "_todo": "Expand with live Agmarknet/APMC coordinate data when database integration is complete.",
+    "_format": "Each entry: market (lowercase key), district (lowercase), state (lowercase), lat, lng"
+  },
+  {
+    "market": "amritsar",
+    "district": "amritsar",
+    "state": "punjab",
+    "lat": 31.634,
+    "lng": 74.8723,
+    "display_name": "Amritsar Mandi"
+  },
+  {
+    "market": "rayya",
+    "district": "amritsar",
+    "state": "punjab",
+    "lat": 31.6523,
+    "lng": 74.9534,
+    "display_name": "Rayya Mandi"
+  },
+  {
+    "market": "tarn taran",
+    "district": "tarn taran",
+    "state": "punjab",
+    "lat": 31.452,
+    "lng": 74.9257,
+    "display_name": "Tarn Taran Mandi"
+  },
+  {
+    "market": "bhavnagar",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.7645,
+    "lng": 72.1519,
+    "display_name": "Bhavnagar Mandi"
+  },
+  {
+    "market": "damnagar",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.6906,
+    "lng": 71.5259,
+    "display_name": "Damnagar Mandi"
+  },
+  {
+    "market": "rajkot",
+    "district": "rajkot",
+    "state": "gujarat",
+    "lat": 22.3039,
+    "lng": 70.8022,
+    "display_name": "Rajkot Mandi"
+  },
+  {
+    "market": "gondal",
+    "district": "rajkot",
+    "state": "gujarat",
+    "lat": 21.961,
+    "lng": 70.7986,
+    "display_name": "Gondal Mandi"
+  },
+  {
+    "market": "junagadh",
+    "district": "junagadh",
+    "state": "gujarat",
+    "lat": 21.5222,
+    "lng": 70.4579,
+    "display_name": "Junagadh Mandi"
+  }
+]
