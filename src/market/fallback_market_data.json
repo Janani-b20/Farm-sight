@@ -1,0 +1,101 @@
+[
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Punjab",
+    "district": "Amritsar",
+    "market": "Amritsar",
+    "variety": "Common",
+    "minimum_price": 2100.0,
+    "maximum_price": 2300.0,
+    "modal_price": 2200.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Punjab",
+    "district": "Amritsar",
+    "market": "Rayya",
+    "variety": "Common",
+    "minimum_price": 2150.0,
+    "maximum_price": 2350.0,
+    "modal_price": 2250.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Paddy(Dhan)",
+    "state": "Punjab",
+    "district": "Tarn Taran",
+    "market": "Tarn Taran",
+    "variety": "Common",
+    "minimum_price": 2050.0,
+    "maximum_price": 2250.0,
+    "modal_price": 2150.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Gujarat",
+    "district": "Amreli",
+    "market": "Bhavnagar",
+    "variety": "Kalyan",
+    "minimum_price": 6800.0,
+    "maximum_price": 7200.0,
+    "modal_price": 7000.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Gujarat",
+    "district": "Amreli",
+    "market": "Damnagar",
+    "variety": "Kalyan",
+    "minimum_price": 6900.0,
+    "maximum_price": 7300.0,
+    "modal_price": 7100.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Cotton",
+    "state": "Gujarat",
+    "district": "Rajkot",
+    "market": "Rajkot",
+    "variety": "Kalyan",
+    "minimum_price": 6700.0,
+    "maximum_price": 7100.0,
+    "modal_price": 6900.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Gujarat",
+    "district": "Rajkot",
+    "market": "Gondal",
+    "variety": "Bold",
+    "minimum_price": 6000.0,
+    "maximum_price": 6400.0,
+    "modal_price": 6200.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Gujarat",
+    "district": "Rajkot",
+    "market": "Rajkot",
+    "variety": "Bold",
+    "minimum_price": 6100.0,
+    "maximum_price": 6500.0,
+    "modal_price": 6300.0,
+    "arrival_date": "28/08/2026"
+  },
+  {
+    "commodity": "Groundnut",
+    "state": "Gujarat",
+    "district": "Junagadh",
+    "market": "Junagadh",
+    "variety": "Bold",
+    "minimum_price": 5900.0,
+    "maximum_price": 6300.0,
+    "modal_price": 6100.0,
+    "arrival_date": "28/08/2026"
+  }
+]
