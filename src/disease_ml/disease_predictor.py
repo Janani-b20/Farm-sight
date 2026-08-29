@@ -3,7 +3,20 @@ from src.disease_ml.paddy.predictor import (
     predict_paddy_image,
 )
 
+from src.disease_ml.cotton.predictor import (
+    load_cotton_model,
+    predict_cotton_image,
+)
+
+from src.disease_ml.groundnut.predictor import (
+    load_groundnut_model,
+    predict_groundnut_image,
+)
+
+
 _paddy_model = None
+_cotton_model = None
+_groundnut_model = None
 
 
 def predict_disease(crop, image):
@@ -25,6 +38,8 @@ def predict_disease(crop, image):
     """
 
     global _paddy_model
+    global _cotton_model
+    global _groundnut_model
 
     crop = crop.strip().lower()
 
@@ -32,27 +47,35 @@ def predict_disease(crop, image):
         if _paddy_model is None:
             _paddy_model = load_paddy_model()
 
-        return predict_paddy_image(_paddy_model, image)
+        return predict_paddy_image(
+            _paddy_model,
+            image
+        )
 
     if crop == "cotton":
-        return {
-            "crop": "cotton",
-            "disease": "unavailable",
-            "confidence": 0.0,
-            "message": "Cotton disease model is not integrated yet.",
-        }
+        if _cotton_model is None:
+            _cotton_model = load_cotton_model()
+
+        return predict_cotton_image(
+            _cotton_model,
+            image
+        )
 
     if crop == "groundnut":
-        return {
-            "crop": "groundnut",
-            "disease": "unavailable",
-            "confidence": 0.0,
-            "message": "Groundnut disease model is not integrated yet.",
-        }
+        if _groundnut_model is None:
+            _groundnut_model = load_groundnut_model()
+
+        return predict_groundnut_image(
+            _groundnut_model,
+            image
+        )
 
     return {
         "crop": crop,
         "disease": "unsupported",
         "confidence": 0.0,
-        "message": "Unsupported crop. Please select paddy, cotton, or groundnut.",
+        "message": (
+            "Unsupported crop. "
+            "Please select paddy, cotton, or groundnut."
+        ),
     }
