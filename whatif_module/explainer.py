@@ -1,40 +1,49 @@
 import os
+from dotenv import load_dotenv
 from google import genai
 
-API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+load_dotenv()
 
-client = genai.Client(api_key=API_KEY)
+def generate_farmer_explanation(simulation_result: dict, crop_name: str = "நெல்", weather_info: dict = None) -> str:
+    # Handle halted condition (Uncertain disease)
+    if simulation_result.get("status") == "halted":
+        return simulation_result.get("reason", "பயிரின் புகைப்படத்தை மீண்டும் தெளிவாக பதிவேற்றவும்.")
 
-def generate_farmer_explanation(simulation_result, crop_name="நெல் (Paddy)", language="Tamil"):
-    """
-    Translates rule engine output into farmer-friendly conversational advice in Tamil.
-    """
+    # Handle healthy crop path
+    if simulation_result.get("condition") == "healthy":
+        return f"பயிர் ஆரோக்கியமாக உள்ளது. {simulation_result.get('reason')}"
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        # Fallback if API key is missing
+        return f"பரிந்துரை: {simulation_result.get('reason')}"
+
     prompt = f"""
-You are an empathetic agricultural advisor talking directly to an Indian farmer.
+    You are an expert Tamil Agricultural Advisor speaking directly to a rural farmer.
+    
+    Context Details:
+    - Crop: {crop_name}
+    - Simulation Result: {simulation_result}
+    - Weather Information: {weather_info}
 
-Data:
-- Crop: {crop_name}
-- Action: {simulation_result.get('action_selected')}
-- Recommended: {simulation_result.get('recommended')}
-- Water Impact: {simulation_result.get('water_usage')}
-- Risk Factor: {simulation_result.get('disease_worsening_risk')}
-- Reason: {simulation_result.get('reason')}
-
-Instruction:
-Explain the outcome clearly to the farmer strictly in Tamil script (தமிழ் எழுத்துக்களில் மட்டும்).
-Format with these 3 bullet points:
-1. நேரடி பரிந்துரை (Direct recommendation)
-2. முக்கிய ஆபத்து (Primary risk / consequence)
-3. மாற்று யோசனை (Helpful alternative action)
-
-Keep the tone supportive, direct, and respectful. Do not use English words in the explanation.
-"""
+    CRITICAL RULES:
+    1. Respond STRICTLY and ENTIRELY in pure Tamil script (தமிழ் எழுத்துகளில் மட்டும்).
+    2. Do NOT use English words or Tanglish.
+    3. Provide exactly 3 short bullet points:
+       * தற்போதைய சூழல் மற்றும் ஆபத்து
+       * விவசாயி செய்ய வேண்டிய உடனடி நடவடிக்கை
+       * இதனால் கிடைக்கும் நேரடி பலன்
+    4. Keep it natural and simple for audio speech.
+    """
 
     try:
+        client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt,
+            model="gemini-2.5-flash",
+            contents=prompt
         )
-        return response.text
+        return response.text.strip()
     except Exception as e:
-        return f"பரிந்துரை: {simulation_result.get('reason')}"
+        # Graceful fallback if Gemini API fails
+        print(f"[Gemini Fallback Warning]: {e}")
+        return f"வானிலை எச்சரிக்கை: {simulation_result.get('reason')}"
