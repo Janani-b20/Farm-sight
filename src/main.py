@@ -46,13 +46,15 @@ def get_market_analysis(
     state: str = Query(..., description="State name (e.g. Punjab, Gujarat)"),
     district: Optional[str] = Query(None, description="Optional district name"),
     market: Optional[str] = Query(None, description="Optional wholesale market (Mandi) name"),
-    quantity_kg: Optional[float] = Query(None, description="Optional quantity in kg to calculate gross estimated value")
+    quantity_kg: Optional[float] = Query(None, description="Optional quantity in kg to calculate gross estimated value"),
+    user_lat: Optional[float] = Query(None, description="Optional farmer's latitude"),
+    user_lng: Optional[float] = Query(None, description="Optional farmer's longitude"),
 ):
     """
     Exposes MarketSense crop analysis integrating MarketService and MarketAnalyzer.
     Fetches real-time prices from data.gov.in and performs data aggregation and analysis.
     """
-    logger.info(f"Received market analysis request: commodity={commodity}, state={state}, district={district}, market={market}, quantity_kg={quantity_kg}")
+    logger.info(f"Received market analysis request: commodity={commodity}, state={state}, district={district}, market={market}, quantity_kg={quantity_kg}, user_lat={user_lat}, user_lng={user_lng}")
     
     # Initialize service
     service = MarketService()
@@ -68,7 +70,11 @@ def get_market_analysis(
         
         # Analyze records
         analyzer = MarketAnalyzer(records)
-        analysis_result = analyzer.analyze(quantity_kg=quantity_kg)
+        analysis_result = analyzer.analyze(
+            quantity_kg=quantity_kg,
+            user_lat=user_lat,
+            user_lng=user_lng
+        )
         
         return analysis_result
 

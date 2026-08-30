@@ -35,9 +35,12 @@ export default function MarketSense({
   // Mode State (Live Location ON by default)
   const [useLiveLocation, setUseLiveLocation] = useState<boolean>(true);
 
-  // Effective location coordinates — consumed strictly from teammate props when provided
-  const effectiveLat = userLocation?.latitude;
-  const effectiveLng = userLocation?.longitude;
+  // Manual Mode coordinates entered in the TransportEstimator manual coordinate inputs
+  const [manualCoordinates, setManualCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Effective location coordinates — consumed strictly from teammate props when Live Location is ON, or manual coordinates input when OFF
+  const effectiveLat = useLiveLocation ? userLocation?.latitude : (manualCoordinates?.latitude ?? undefined);
+  const effectiveLng = useLiveLocation ? userLocation?.longitude : (manualCoordinates?.longitude ?? undefined);
 
   // Form State
   const [commodity, setCommodity] = useState<string>('Cotton');
@@ -72,15 +75,22 @@ export default function MarketSense({
     e.preventDefault();
 
     // Determine target location strictly from userLocation when Live Location mode is active.
-    // When Live Location is ON, ONLY the teammate-provided state/district are used.
-    // The manual form values (stateName/district) are never used as a silent fallback.
+    // When Live Location is ON, ONLY the teammate-provided state/district/coordinates are used.
+    // If Live Location is ON and userLocation is missing or incomplete, show "Waiting for Live Location..."
+    if (useLiveLocation) {
+      if (!userLocation || !userLocation.latitude || !userLocation.longitude || !userLocation.state) {
+        setError('Waiting for Live Location...');
+        return;
+      }
+    }
+
     const activeState = useLiveLocation ? userLocation?.state : stateName;
     const activeDistrict = useLiveLocation ? (userLocation?.district ?? '') : district;
 
     if (!commodity || !activeState) {
       setError(
         useLiveLocation
-          ? 'Live Location state is not yet available. Please wait for the Live Location module to provide your location, or switch to Manual Mode.'
+          ? 'Waiting for Live Location...'
           : 'State is required.'
       );
       return;
@@ -98,15 +108,15 @@ export default function MarketSense({
         // 1. Fetch District-level / Nearby markets
         // 2. Fetch State-level markets across all major mandis
         const [distData, stateData] = await Promise.all([
-          fetchMarketAnalysis(commodity, activeState, activeDistrict.trim(), undefined, quantity),
-          fetchMarketAnalysis(commodity, activeState, undefined, undefined, quantity)
+          fetchMarketAnalysis(commodity, activeState, activeDistrict.trim(), undefined, quantity, effectiveLat, effectiveLng),
+          fetchMarketAnalysis(commodity, activeState, undefined, undefined, quantity, effectiveLat, effectiveLng)
         ]);
 
         setDistrictResult(distData);
         setAnalysisResult(stateData);
       } else {
         // Single Query
-        const data = await fetchMarketAnalysis(commodity, activeState, activeDistrict, market, quantity);
+        const data = await fetchMarketAnalysis(commodity, activeState, activeDistrict, market, quantity, effectiveLat, effectiveLng);
         setAnalysisResult(data);
       }
       setShowResults(true);
@@ -118,8 +128,37 @@ export default function MarketSense({
     }
   };
 
+  // targetMarketAnalysis holds the specific analysis of the selected targetMarket (including its coordinates, distance, and net value)
+  const [targetMarketAnalysis, setTargetMarketAnalysis] = useState<MarketAnalysisResponse | null>(null);
+
   // Resolve best/selected target market for transportation calculation
   const targetMarket = selectedMarketOverride || analysisResult?.best_market || districtResult?.best_market;
+
+  React.useEffect(() => {
+    if (!targetMarket) {
+      setTargetMarketAnalysis(null);
+      return;
+    }
+
+    const fetchTargetAnalysis = async () => {
+      try {
+        const data = await fetchMarketAnalysis(
+          commodity,
+          targetMarket.state,
+          targetMarket.district,
+          targetMarket.market,
+          quantity,
+          effectiveLat,
+          effectiveLng
+        );
+        setTargetMarketAnalysis(data);
+      } catch (err) {
+        console.error('Error fetching target market analysis:', err);
+      }
+    };
+
+    fetchTargetAnalysis();
+  }, [targetMarket, commodity, quantity, effectiveLat, effectiveLng]);
 
   const activeState = useLiveLocation ? userLocation?.state : stateName;
   const activeDistrict = useLiveLocation ? (userLocation?.district ?? '') : district;
@@ -200,16 +239,16 @@ export default function MarketSense({
                 )}
               </div>
               <p className="text-zinc-600 dark:text-zinc-300 font-medium">
-                {userLocation ? (
-                  `${userLocation.state || 'State'}${userLocation.district ? ` • ${userLocation.district} District` : ''}`
+                {userLocation && userLocation.state ? (
+                  `${userLocation.state}${userLocation.district ? ` • ${userLocation.district} District` : ''}`
                 ) : (
-                  <span className="italic text-zinc-400">Awaiting Live Location provider output...</span>
+                  <span className="italic text-zinc-400">Waiting for Live Location...</span>
                 )}
               </p>
               <div className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
                 {effectiveLat !== undefined && effectiveLng !== undefined
                   ? `Coordinates: ${effectiveLat.toFixed(4)}°N, ${effectiveLng.toFixed(4)}°E`
-                  : 'Coordinates: Pending Live Location input'}
+                  : 'Coordinates: Waiting for Live Location...'}
               </div>
             </div>
           )}
@@ -454,6 +493,80 @@ export default function MarketSense({
                 </div>
               )}
 
+              {/* Financial Flow Section (Net Value and Transport Details) */}
+              {(targetMarketAnalysis?.estimated_net_value && targetMarketAnalysis.estimated_net_value.net_value_rs !== null) ? (() => {
+                  const netVal = targetMarketAnalysis.estimated_net_value;
+                  const tEst = targetMarketAnalysis.transport_estimate;
+
+                  if (!netVal || !tEst) return null;
+
+                  return (
+                    <div className="p-5 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm space-y-4">
+                      <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-2">
+                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-500" />
+                          Net Revenue Flow ({tEst.market_name})
+                        </h4>
+                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 italic">
+                          Demo rates mapping
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Gross value */}
+                        <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+                          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                            Gross Crop Value
+                          </span>
+                          <div className="text-lg font-bold text-zinc-800 dark:text-zinc-200 mt-1">
+                            Rs. {netVal.gross_value_rs?.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                            Quantity: {netVal.quantity_kg} kg
+                          </div>
+                        </div>
+
+                        {/* Transport deductions */}
+                        <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+                          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                            Transport ({tEst.transport_type_display || tEst.transport_type})
+                          </span>
+                          <div className="text-lg font-bold text-red-600 dark:text-red-400 mt-1">
+                            - Rs. {netVal.transport_cost_rs?.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 leading-normal">
+                            Distance: {tEst.estimated_road_distance_km} km ({tEst.distance_source === 'openrouteservice' ? 'Live route' : 'Fallback'})
+                            {tEst.estimated_travel_duration && ` • ${tEst.estimated_travel_duration}`}
+                          </div>
+                        </div>
+
+                        {/* Net Value */}
+                        <div className="p-4 bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-lg">
+                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-brand-500 uppercase tracking-wider">
+                            Estimated Net Value
+                          </span>
+                          <div className="text-lg font-bold text-emerald-600 dark:text-brand-500 mt-1">
+                            Rs. {netVal.net_value_rs?.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-emerald-500/80 dark:text-brand-400 mt-1 font-medium">
+                            Expected pocket revenue after freight
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-zinc-400 dark:text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/80 pt-2">
+                        <strong>Calculation Basis:</strong> {netVal.calculation_basis}
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Net Revenue Estimation:</span>
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                      {targetMarketAnalysis?.estimated_net_value?.calculation_basis || "Location coordinates are required to calculate transportation freight and estimate net value."}
+                    </p>
+                  </div>
+                )}
+
               {/* SECTION 1: DISTRICT-LEVEL / NEARBY MARKETS */}
               {districtResult && districtResult.valid_records_analyzed > 0 && (
                 <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
@@ -627,13 +740,20 @@ export default function MarketSense({
                   )}
                 </div>
                 <TransportEstimator
-                  key={`${targetMarket?.market}-${targetMarket?.district}-${effectiveLat}-${effectiveLng}-${quantity}`}
+                  key={`${targetMarket?.market}-${targetMarket?.district}-${quantity}`}
                   marketName={targetMarket?.market}
                   district={targetMarket?.district}
                   state={targetMarket?.state}
                   quantityKg={quantity ? parseFloat(quantity) : undefined}
                   userLat={useLiveLocation ? effectiveLat : undefined}
                   userLng={useLiveLocation ? effectiveLng : undefined}
+                  onCoordinatesChange={(lat, lng) => {
+                    if (lat !== undefined && lng !== undefined) {
+                      setManualCoordinates({ latitude: lat, longitude: lng });
+                    } else {
+                      setManualCoordinates(null);
+                    }
+                  }}
                 />
               </div>
 

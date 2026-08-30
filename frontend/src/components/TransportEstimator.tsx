@@ -35,6 +35,10 @@ interface TransportEstimatorProps {
    * Wired from live-location when that feature is merged.
    */
   userLng?: number;
+  /**
+   * Callback when coordinates are entered/calculated manually
+   */
+  onCoordinatesChange?: (lat: number | undefined, lng: number | undefined) => void;
 }
 
 export default function TransportEstimator({
@@ -44,6 +48,7 @@ export default function TransportEstimator({
   quantityKg,
   userLat,
   userLng,
+  onCoordinatesChange,
 }: TransportEstimatorProps) {
   // ---------------------------------------------------------------------------
   // Local form state (used when live-location props are absent)
@@ -100,6 +105,10 @@ export default function TransportEstimator({
     if (isNaN(resolvedLat) || isNaN(resolvedLng)) {
       setError('Please enter valid latitude and longitude values.');
       return;
+    }
+
+    if (onCoordinatesChange) {
+      onCoordinatesChange(resolvedLat, resolvedLng);
     }
 
     const target = formMarket || marketName;

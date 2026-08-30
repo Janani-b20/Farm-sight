@@ -519,6 +519,97 @@ class TestOpenRouteServiceIntegration(unittest.TestCase):
         self.assertIsNone(result["estimated_travel_duration"])
         self.assertEqual(result["distance_source"], "haversine")
 
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_vehicle_rates_tractor_trolley(self):
+        """Verify tractor_trolley mapping and cost parameters (<= 500 kg)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "routes": [{"summary": {"distance": 10000.0, "duration": 600.0}}]
+        }
+        self.mock_post.return_value = mock_response
+
+        # 450 kg -> tractor_trolley (base = 150.0, per_quintal_per_km = 1.2)
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+            quantity_kg=450.0,
+        )
+        self.assertEqual(result["transport_type"], "tractor_trolley")
+        self.assertEqual(result["transport_type_display"], "Tractor Trolley")
+        self.assertEqual(result["base_transport_cost_rs"], 162.0)
+        self.assertEqual(result["estimated_quantity_transport_cost_rs"], 204.0)
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_vehicle_rates_mini_truck(self):
+        """Verify mini_truck mapping and cost parameters (501-2000 kg)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "routes": [{"summary": {"distance": 10000.0, "duration": 600.0}}]
+        }
+        self.mock_post.return_value = mock_response
+
+        # 1000 kg -> mini_truck (base = 250.0, per_quintal_per_km = 1.8)
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+            quantity_kg=1000.0,
+        )
+        self.assertEqual(result["transport_type"], "mini_truck")
+        self.assertEqual(result["transport_type_display"], "Mini Truck")
+        self.assertEqual(result["base_transport_cost_rs"], 268.0)
+        self.assertEqual(result["estimated_quantity_transport_cost_rs"], 430.0)
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_vehicle_rates_truck(self):
+        """Verify truck mapping and cost parameters (> 2000 kg)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "routes": [{"summary": {"distance": 10000.0, "duration": 600.0}}]
+        }
+        self.mock_post.return_value = mock_response
+
+        # 3000 kg -> truck (base = 400.0, per_quintal_per_km = 2.5)
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+            quantity_kg=3000.0,
+        )
+        self.assertEqual(result["transport_type"], "truck")
+        self.assertEqual(result["transport_type_display"], "Truck")
+        self.assertEqual(result["base_transport_cost_rs"], 425.0)
+        self.assertEqual(result["estimated_quantity_transport_cost_rs"], 1150.0)
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_vehicle_rates_fallback_haversine(self):
+        """Verify vehicle rates are used correctly when ORS fails and we fallback to Haversine."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        self.mock_post.return_value = mock_response
+
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+            quantity_kg=1000.0,
+        )
+        self.assertEqual(result["distance_source"], "haversine")
+        self.assertEqual(result["transport_type"], "mini_truck")
+        self.assertIsNotNone(result["estimated_quantity_transport_cost_rs"])
+
 
 if __name__ == "__main__":
     unittest.main()

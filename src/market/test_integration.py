@@ -602,5 +602,97 @@ class TestMarketServiceAnalyzerIntegration(unittest.TestCase):
             self.assertEqual(records[0]["data_source"], "data.gov.in")
             self.assertEqual(records[0]["data_status"], "current")
 
+class TestMarketNetValueIntegration(unittest.TestCase):
+    """Tests for Net Value and Transport Type integration inside MarketAnalyzer."""
+
+    def setUp(self):
+        # Rayya is in Amritsar, Punjab
+        # Amritsar coordinates in JSON are at lat=31.634, lng=74.8723
+        self.records = [
+            {
+                "commodity": "Paddy",
+                "state": "Punjab",
+                "district": "Amritsar",
+                "market": "Rayya",
+                "variety": "Common",
+                "min_price": 2100.0,
+                "max_price": 2300.0,
+                "modal_price": 2200.0,
+                "arrival_date": "28/08/2026",
+                "data_source": "data.gov.in",
+                "data_status": "current"
+            }
+        ]
+
+    @patch('requests.post')
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_ors_success_net_value(self, mock_post):
+        """Verify ORS success uses vehicle specific rate, calculates transport cost, and net value."""
+        # Mock ORS: distance 20 km (20000 m), duration 1800 s
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "routes": [{"summary": {"distance": 20000.0, "duration": 1800.0}}]
+        }
+        mock_post.return_value = mock_response
+
+        analyzer = MarketAnalyzer(self.records)
+        # Quantity 1000 kg -> mini_truck (base: 250, per-qtl-km: 1.8)
+        # Gross crop value = 1000 kg * 22.0 Rs/kg = 22,000.0 Rs
+        # Transport cost = 250.0 + (20.0 km * 1.8 * 10 quintals) = 250.0 + 360.0 = 610.0 Rs
+        # Net value = 22,000.0 - 610.0 = 21,390.0 Rs
+        analysis = analyzer.analyze(quantity_kg=1000.0, user_lat=31.63, user_lng=74.87)
+
+        self.assertIsNotNone(analysis["estimated_net_value"])
+        net_val_data = analysis["estimated_net_value"]
+        self.assertEqual(net_val_data["gross_value_rs"], 22000.0)
+        self.assertEqual(net_val_data["transport_cost_rs"], 610.0)
+        self.assertEqual(net_val_data["net_value_rs"], 21390.0)
+        self.assertEqual(analysis["net_value_rs"], 21390.0)
+        self.assertEqual(analysis["transport_type"], "mini_truck")
+        self.assertEqual(analysis["estimated_transport_cost_rs"], 610.0)
+        self.assertIn("mini_truck", net_val_data["calculation_basis"])
+
+    @patch('requests.post')
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_ors_failure_fallback_net_value(self, mock_post):
+        """Verify ORS failure falls back to Haversine * 1.3 and calculates net value."""
+        # Mock ORS failure
+        mock_post.side_effect = Exception("ORS Connection Failed")
+
+        analyzer = MarketAnalyzer(self.records)
+        # Quantity 3000 kg -> truck (base: 400.0, per-qtl-km: 2.5)
+        # We check that net value is calculated using fallback Haversine distance
+        analysis = analyzer.analyze(quantity_kg=3000.0, user_lat=31.63, user_lng=74.87)
+
+        self.assertIsNotNone(analysis["estimated_net_value"])
+        net_val_data = analysis["estimated_net_value"]
+        self.assertEqual(analysis["transport_type"], "truck")
+        self.assertIsNotNone(net_val_data["transport_cost_rs"])
+        self.assertIsNotNone(net_val_data["net_value_rs"])
+        self.assertEqual(analysis["net_value_rs"], net_val_data["net_value_rs"])
+        self.assertIn("haversine", analysis["transport_estimate"]["distance_source"])
+
+    def test_missing_coordinates(self):
+        """Verify that when coordinates are missing, net value is None and message indicates why."""
+        analyzer = MarketAnalyzer(self.records)
+        analysis = analyzer.analyze(quantity_kg=1000.0, user_lat=None, user_lng=None)
+
+        self.assertIsNotNone(analysis["estimated_net_value"])
+        self.assertIsNone(analysis["net_value_rs"])
+        self.assertIsNone(analysis["estimated_net_value"]["net_value_rs"])
+        self.assertIn("required", analysis["net_value_calculation_basis"])
+
+    def test_missing_quantity(self):
+        """Verify that when quantity is missing, net value is None."""
+        analyzer = MarketAnalyzer(self.records)
+        analysis = analyzer.analyze(quantity_kg=None, user_lat=31.63, user_lng=74.87)
+
+        self.assertIsNotNone(analysis["estimated_net_value"])
+        self.assertIsNone(analysis["net_value_rs"])
+        self.assertIsNone(analysis["estimated_net_value"]["net_value_rs"])
+        self.assertIn("required", analysis["net_value_calculation_basis"])
+
+
 if __name__ == "__main__":
     unittest.main()

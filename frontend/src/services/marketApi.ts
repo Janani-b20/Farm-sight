@@ -39,6 +39,18 @@ export interface MarketAnalysisResponse {
   market_comparison: MarketRecord[];
   price_trend: PriceTrend;
   estimated_gross_value: EstimatedGrossValue | null;
+  estimated_net_value?: {
+    quantity_kg: number | null;
+    gross_value_rs: number | null;
+    transport_cost_rs: number | null;
+    net_value_rs: number | null;
+    calculation_basis: string;
+  } | null;
+  transport_estimate?: any | null;
+  transport_type?: string | null;
+  estimated_transport_cost_rs?: number | null;
+  net_value_rs?: number | null;
+  net_value_calculation_basis?: string | null;
 }
 
 export async function fetchMarketAnalysis(
@@ -46,7 +58,9 @@ export async function fetchMarketAnalysis(
   state: string,
   district?: string,
   market?: string,
-  quantityKg?: string
+  quantityKg?: string,
+  userLat?: number,
+  userLng?: number
 ): Promise<MarketAnalysisResponse> {
   const params = new URLSearchParams({
     commodity: commodity,
@@ -61,6 +75,12 @@ export async function fetchMarketAnalysis(
   }
   if (quantityKg && quantityKg.trim()) {
     params.append('quantity_kg', quantityKg.trim());
+  }
+  if (userLat !== undefined && userLat !== null) {
+    params.append('user_lat', userLat.toString());
+  }
+  if (userLng !== undefined && userLng !== null) {
+    params.append('user_lng', userLng.toString());
   }
 
   const response = await fetch(`/api/market?${params.toString()}`);

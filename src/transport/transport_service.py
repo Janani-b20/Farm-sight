@@ -19,6 +19,26 @@ DEFAULT_BASE_COST_RS: float = float(
 )
 
 
+# Illustrative vehicle rates for demo purposes (not official market rates)
+VEHICLE_RATES = {
+    "tractor_trolley": {
+        "base": 150.0,
+        "per_quintal_per_km": 1.2,
+        "name": "Tractor Trolley"
+    },
+    "mini_truck": {
+        "base": 250.0,
+        "per_quintal_per_km": 1.8,
+        "name": "Mini Truck"
+    },
+    "truck": {
+        "base": 400.0,
+        "per_quintal_per_km": 2.5,
+        "name": "Truck"
+    }
+}
+
+
 class MandiNotFoundError(Exception):
     """Raised when the requested mandi is not in the coordinate dataset."""
 
@@ -54,6 +74,23 @@ class TransportService:
     # Public API
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def get_transport_type(quantity_kg: Optional[float]) -> str:
+        """
+        Maps crop quantity to a standard demo transport vehicle type.
+        - quantity <= 500 kg -> tractor_trolley
+        - 501–2000 kg -> mini_truck
+        - > 2000 kg -> truck
+        """
+        if quantity_kg is None or quantity_kg <= 0:
+            return "tractor_trolley"
+        if quantity_kg <= 500.0:
+            return "tractor_trolley"
+        elif quantity_kg <= 2000.0:
+            return "mini_truck"
+        else:
+            return "truck"
+
     def calculate_transport(
         self,
         market_name: str,
@@ -66,35 +103,20 @@ class TransportService:
         """
         Main entry point.  Looks up mandi coordinates, computes distance,
         and returns a structured cost estimate.
-
-        Parameters
-        ----------
-        market_name : str
-            Name of the mandi (e.g. "Gondal").
-        district : str
-            District the mandi belongs to (e.g. "Rajkot").
-        state : str
-            State the mandi belongs to (e.g. "Gujarat").
-        user_lat : float
-            Farmer's latitude (degrees).
-        user_lng : float
-            Farmer's longitude (degrees).
-        quantity_kg : float, optional
-            Quantity of produce in kg.  When provided, a quantity-based cost
-            estimate is also returned.
-
-        Returns
-        -------
-        dict with keys:
-            market_name, district, state,
-            mandi_lat, mandi_lng,
-            aerial_distance_km, estimated_road_distance_km,
-            base_transport_cost_rs,
-            cost_per_quintal_per_km,
-            quantity_kg (echoed, or None),
-            estimated_quantity_transport_cost_rs (or None),
-            note
         """
+        if quantity_kg is not None and quantity_kg > 0:
+            t_type = self.get_transport_type(quantity_kg)
+            rates = VEHICLE_RATES[t_type]
+            base_cost_rs = rates["base"]
+            cost_per_quintal_per_km = rates["per_quintal_per_km"]
+            transport_type = t_type
+            transport_type_display = rates["name"]
+        else:
+            transport_type = None
+            transport_type_display = None
+            base_cost_rs = self.base_cost_rs
+            cost_per_quintal_per_km = self.cost_per_quintal_per_km
+
         try:
             mandi = self._lookup_mandi(market_name, district, state)
         except MandiNotFoundError as e:
@@ -115,6 +137,8 @@ class TransportService:
                 "status": "coordinate_unavailable",
                 "message": "Transport estimate is unavailable for this market.",
                 "note": str(e),
+                "transport_type": transport_type,
+                "transport_type_display": transport_type_display,
             }
 
         aerial_km = self._haversine(
@@ -147,7 +171,7 @@ class TransportService:
             )
 
         # Base transport cost (fixed for any load)
-        base_cost = round(self.base_cost_rs + (road_km * self.cost_per_quintal_per_km), 2)
+        base_cost = round(base_cost_rs + (road_km * cost_per_quintal_per_km), 2)
 
         result: Dict[str, Any] = {
             "market_name": mandi["display_name"],
@@ -159,7 +183,7 @@ class TransportService:
             "user_lng": user_lng,
             "aerial_distance_km": round(aerial_km, 2),
             "estimated_road_distance_km": road_km,
-            "cost_per_quintal_per_km": self.cost_per_quintal_per_km,
+            "cost_per_quintal_per_km": cost_per_quintal_per_km,
             "base_transport_cost_rs": base_cost,
             "quantity_kg": quantity_kg,
             "estimated_quantity_transport_cost_rs": None,
@@ -169,13 +193,15 @@ class TransportService:
             "ors_road_distance_km": ors_road_distance_km,
             "estimated_travel_duration": estimated_travel_duration,
             "distance_source": distance_source,
+            "transport_type": transport_type,
+            "transport_type_display": transport_type_display,
         }
 
         if quantity_kg is not None and quantity_kg > 0:
             quantity_quintals = quantity_kg / 100.0
             qty_cost = round(
-                self.base_cost_rs
-                + (road_km * self.cost_per_quintal_per_km * quantity_quintals),
+                base_cost_rs
+                + (road_km * cost_per_quintal_per_km * quantity_quintals),
                 2,
             )
             result["estimated_quantity_transport_cost_rs"] = qty_cost
