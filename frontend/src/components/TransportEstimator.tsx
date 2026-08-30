@@ -71,14 +71,27 @@ export default function TransportEstimator({
   // Flags whether live-location coordinates were passed as props
   const locationComingFromProps = userLat !== undefined && userLng !== undefined;
 
+  // Sync state if live location props change to defined values
+  React.useEffect(() => {
+    if (userLat !== undefined) {
+      setFormLat(String(userLat));
+    }
+  }, [userLat]);
+
+  React.useEffect(() => {
+    if (userLng !== undefined) {
+      setFormLng(String(userLng));
+    }
+  }, [userLng]);
+
   // ---------------------------------------------------------------------------
   // Handler
   // ---------------------------------------------------------------------------
   const handleEstimate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const resolvedLat = userLat !== undefined ? userLat : parseFloat(formLat);
-    const resolvedLng = userLng !== undefined ? userLng : parseFloat(formLng);
+    const resolvedLat = locationComingFromProps ? userLat : parseFloat(formLat);
+    const resolvedLng = locationComingFromProps ? userLng : parseFloat(formLng);
 
     if (isNaN(resolvedLat) || isNaN(resolvedLng)) {
       setError('Please enter valid latitude and longitude values.');

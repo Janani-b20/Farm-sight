@@ -29,6 +29,9 @@ export interface EstimatedGrossValue {
 
 export interface MarketAnalysisResponse {
   data_source?: string;
+  data_status?: 'current' | 'recent';
+  last_updated?: string | null;
+  district_unavailable?: boolean;
   total_records_processed: number;
   valid_records_analyzed: number;
   best_market: MarketRecord | null;

@@ -324,5 +324,283 @@ class TestMarketServiceAnalyzerIntegration(unittest.TestCase):
             self.assertNotEqual(r["market"], "Amritsar")
             self.assertNotEqual(r["market"], "Thanjavur")
 
+    def test_current_record_available(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        from datetime import datetime
+        today_str = datetime.now().strftime("%d/%m/%Y")
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Paddy(Common)",
+                    "state": "Tamil Nadu",
+                    "district": "Kanchipuram",
+                    "market": "Kanchipuram",
+                    "variety": "Common",
+                    "min_price": "2100",
+                    "max_price": "2300",
+                    "modal_price": "2200",
+                    "arrival_date": today_str
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            mock_get.return_value = mock_response
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Paddy", state="Tamil Nadu", district="Kanchipuram")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["data_status"], "current")
+            self.assertEqual(records[0]["last_updated"], today_str)
+            self.assertFalse(records[0]["district_unavailable"])
+
+    def test_recent_district_record_available(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Paddy(Common)",
+                    "state": "Tamil Nadu",
+                    "district": "Kanchipuram",
+
+                    "market": "Kanchipuram",
+                    "variety": "Common",
+                    "min_price": "2100",
+                    "max_price": "2300",
+                    "modal_price": "2200",
+                    "arrival_date": "20/08/2026"
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            mock_get.return_value = mock_response
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Paddy", state="Tamil Nadu", district="Kanchipuram")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["data_status"], "recent")
+            self.assertEqual(records[0]["last_updated"], "20/08/2026")
+            self.assertFalse(records[0]["district_unavailable"])
+
+    def test_recent_state_alternatives_available(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_empty = MagicMock()
+        mock_empty.status_code = 200
+        mock_empty.json.return_value = {"records": []}
+
+        mock_state = MagicMock()
+        mock_state.status_code = 200
+        mock_state.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Cotton",
+                    "state": "Tamil Nadu",
+                    "district": "Madurai",
+                    "market": "Madurai",
+                    "variety": "MCU-5",
+                    "min_price": "7000",
+                    "max_price": "7500",
+                    "modal_price": "7200",
+                    "arrival_date": "25/08/2026"
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            # First variant query with district returns empty, then state query returns alternatives
+            mock_get.side_effect = [mock_empty, mock_state]
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Cotton", state="Tamil Nadu", district="Thanjavur")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["data_status"], "recent")
+            self.assertEqual(records[0]["last_updated"], "25/08/2026")
+            self.assertTrue(records[0]["district_unavailable"])
+
+    def test_zero_data_gov_records_fallback_not_current(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_empty = MagicMock()
+        mock_empty.status_code = 200
+        mock_empty.json.return_value = {"records": []}
+
+        with patch(patch_target) as mock_get:
+            # data.gov.in returns 0 records, falling back to local fallback
+            mock_get.side_effect = [mock_empty] * 10
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Paddy", state="Tamil Nadu", district="Kanchipuram")
+            self.assertTrue(len(records) > 0)
+
+            # Analyze
+            analyzer = MarketAnalyzer(records)
+            result = analyzer.analyze()
+            self.assertEqual(result["data_source"], "local_fallback")
+            self.assertEqual(result["data_status"], "recent")
+
+    def test_no_district_records_but_state_level_available(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_empty = MagicMock()
+        mock_empty.status_code = 200
+        mock_empty.json.return_value = {"records": []}
+
+        mock_state = MagicMock()
+        mock_state.status_code = 200
+        mock_state.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Cotton",
+                    "state": "Tamil Nadu",
+                    "district": "Salem",
+                    "market": "Salem",
+                    "variety": "MCU-5",
+                    "min_price": "7000",
+                    "max_price": "7500",
+                    "modal_price": "7200",
+                    "arrival_date": "28/08/2026"
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            mock_get.side_effect = [mock_empty, mock_state]
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Cotton", state="Tamil Nadu", district="Kanchipuram")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["data_source"], "data.gov.in")
+            self.assertTrue(records[0]["district_unavailable"])
+            self.assertEqual(records[0]["market"], "Salem")
+
+    def test_recent_government_record(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Groundnut",
+                    "state": "Tamil Nadu",
+                    "district": "Cuddalore",
+                    "market": "Cuddalore",
+                    "variety": "Local",
+                    "min_price": "6000",
+                    "max_price": "7000",
+                    "modal_price": "6500",
+                    "arrival_date": "20/08/2026"
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            mock_get.return_value = mock_response
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Groundnut", state="Tamil Nadu", district="Cuddalore")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["data_source"], "data.gov.in")
+            self.assertEqual(records[0]["data_status"], "recent")
+            self.assertEqual(records[0]["last_updated"], "20/08/2026")
+            self.assertFalse(records[0]["district_unavailable"])
+
+    def test_complete_no_data_case(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        mock_empty = MagicMock()
+        mock_empty.status_code = 200
+        mock_empty.json.return_value = {"records": []}
+
+        with patch(patch_target) as mock_get:
+            mock_get.side_effect = [mock_empty] * 20
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            # Thanjavur + Cotton has zero records in fallback as well
+            records = service.get_market_prices(commodity="Cotton", state="Tamil Nadu", district="Thanjavur")
+            self.assertEqual(records, [])
+
+            analyzer = MarketAnalyzer(records)
+            result = analyzer.analyze()
+            self.assertEqual(result["data_source"], "unavailable")
+            self.assertEqual(result["data_status"], "unavailable")
+            self.assertIsNone(result["best_market"])
+
+    def test_existing_groundnut_tamil_nadu_live_case(self) -> None:
+        try:
+            import market.market_service
+            patch_target = 'market.market_service.requests.get'
+        except ImportError:
+            patch_target = 'market_service.requests.get'
+
+        from datetime import datetime
+        today_str = datetime.now().strftime("%d/%m/%Y")
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "records": [
+                {
+                    "commodity": "Groundnut",
+                    "state": "Tamil Nadu",
+                    "district": "Cuddalore",
+                    "market": "Cuddalore",
+                    "variety": "Local",
+                    "min_price": "6000",
+                    "max_price": "7000",
+                    "modal_price": "6500",
+                    "arrival_date": today_str
+                }
+            ]
+        }
+
+        with patch(patch_target) as mock_get:
+            mock_get.return_value = mock_response
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Groundnut", state="Tamil Nadu")
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["commodity"], "Groundnut")
+            self.assertEqual(records[0]["state"], "Tamil Nadu")
+            self.assertEqual(records[0]["data_source"], "data.gov.in")
+            self.assertEqual(records[0]["data_status"], "current")
+
 if __name__ == "__main__":
     unittest.main()

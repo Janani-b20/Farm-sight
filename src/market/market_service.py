@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -55,18 +56,6 @@ class MarketService:
                 "Please configure it in your environment or .env file."
             )
 
-        # Construct query parameters (do not log this to avoid key leakage)
-        params_base: Dict[str, Any] = {
-            "api-key": self.api_key,
-            "format": "json",
-            "limit": limit,
-            "filters[state]": state,
-        }
-        if district:
-            params_base["filters[district]"] = district
-        if market:
-            params_base["filters[market]"] = market
-
         # Determine possible variants for the requested commodity
         normalized_commodity = commodity.lower().strip()
         variants = self.commodity_variants.get(normalized_commodity)
@@ -74,15 +63,90 @@ class MarketService:
             # Fallback to title-cased commodity if not in mapping
             variants = [commodity.title().strip()]
 
-        # Try each variant against the primary data.gov.in API until records are found
+        # Setup standard base query parameters (excl filters[commodity], filters[district], filters[market])
+        params_base: Dict[str, Any] = {
+            "api-key": self.api_key,
+            "format": "json",
+            "limit": limit,
+            "filters[state]": state,
+        }
+
+        today_str = datetime.now().strftime("%d/%m/%Y")
+
+        def parse_arrival_date(rec_dict):
+            d_str = rec_dict.get("arrival_date")
+            if not d_str:
+                return datetime.min
+            try:
+                return datetime.strptime(d_str.strip(), "%d/%m/%Y")
+            except ValueError:
+                return datetime.min
+
+        # Step 1: Query requested district if district is specified
+        if district:
+            district_records = []
+            records_found = False
+            last_error = None
+
+            for api_commodity in variants:
+                params = dict(params_base)
+                params["filters[commodity]"] = api_commodity
+                params["filters[district]"] = district
+                if market:
+                    params["filters[market]"] = market
+
+                logger.info(f"Querying data.gov.in with variant '{api_commodity}' for district '{district}'")
+                try:
+                    response = requests.get(
+                        self.base_url,
+                        params=params,
+                        headers=self.headers,
+                        timeout=(5, 10)
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    raw_records = data.get("records", [])
+                    if raw_records:
+                        for record in raw_records:
+                            parsed = self._parse_record(record)
+                            parsed["data_source"] = "data.gov.in"
+                            district_records.append(parsed)
+                        records_found = True
+                        break
+                except (requests.Timeout, requests.RequestException, ValueError) as e:
+                    logger.warning(f"Request failed for variant '{api_commodity}': {e}")
+                    last_error = e
+                    continue
+
+            if records_found and district_records:
+                # Sort by date descending and filter to only the most recent date
+                district_records.sort(key=parse_arrival_date, reverse=True)
+                newest_date = district_records[0].get("arrival_date", "").strip()
+                filtered_records = [
+                    r for r in district_records
+                    if r.get("arrival_date", "").strip() == newest_date
+                ]
+
+                # Check status
+                status = "current" if newest_date == today_str else "recent"
+                for r in filtered_records:
+                    r["data_status"] = status
+                    r["last_updated"] = newest_date
+                    r["district_unavailable"] = False
+                return filtered_records
+
+        # Step 2: Search for recent state-level market alternatives if no district record found
+        # (Or if district wasn't requested, this is the main state-only query path)
+        state_records = []
         records_found = False
-        parsed_records = []
         last_error = None
 
         for api_commodity in variants:
-            params = dict(params_base)  # shallow copy
+            params = dict(params_base)
             params["filters[commodity]"] = api_commodity
-            logger.info(f"Trying primary data.gov.in market API with commodity variant '{api_commodity}'")
+            # Notice we do NOT pass district or market filters here
+
+            logger.info(f"Querying state-level alternatives in data.gov.in with variant '{api_commodity}'")
             try:
                 response = requests.get(
                     self.base_url,
@@ -94,27 +158,37 @@ class MarketService:
                 data = response.json()
                 raw_records = data.get("records", [])
                 if raw_records:
-                    # Successful fetch with this variant
                     for record in raw_records:
                         parsed = self._parse_record(record)
                         parsed["data_source"] = "data.gov.in"
-                        parsed_records.append(parsed)
+                        state_records.append(parsed)
                     records_found = True
                     break
-                else:
-                    logger.info(f"No records found for commodity variant '{api_commodity}'")
             except (requests.Timeout, requests.RequestException, ValueError) as e:
-                logger.warning(
-                    f"Primary API request failed for variant '{api_commodity}': {e}"
-                )
+                logger.warning(f"State query failed for variant '{api_commodity}': {e}")
                 last_error = e
-                # Continue to next variant
                 continue
 
-        if records_found:
-            return parsed_records
+        if records_found and state_records:
+            # Sort by date descending and filter to only the most recent date
+            state_records.sort(key=parse_arrival_date, reverse=True)
+            newest_date = state_records[0].get("arrival_date", "").strip()
+            filtered_records = [
+                r for r in state_records
+                if r.get("arrival_date", "").strip() == newest_date
+            ]
 
-        # If none of the variants yielded records, proceed to fallback logic
+            # Check status
+            status = "current" if newest_date == today_str else "recent"
+            # Set district_unavailable flag if a district was originally requested
+            is_fallback = bool(district)
+            for r in filtered_records:
+                r["data_status"] = status
+                r["last_updated"] = newest_date
+                r["district_unavailable"] = is_fallback
+            return filtered_records
+
+        # Step 3: Proceed to fallback logic
         err_msg = str(last_error) if last_error else f"No records found for any variant of '{commodity}' in '{state}'"
         logger.warning(f"Primary API unavailable or returned no records ({err_msg}); trying fallback market API")
 
@@ -258,8 +332,10 @@ class MarketService:
 
                 filtered.append(record)
 
+            district_unavailable = False
             # Relax district/market constraint if empty to ensure demo works
             if not filtered and (district or market):
+                district_unavailable = True
                 filtered = []
                 for record in data:
                     rec_commodity = record.get("commodity", "").lower().strip()
@@ -271,8 +347,15 @@ class MarketService:
                     elif norm_commodity == rec_commodity:
                         commodity_match = True
 
+                    if not commodity_match or rec_state != norm_state:
+                        continue
+                    filtered.append(record)
+
             for rec in filtered:
                 rec["data_source"] = "local_fallback"
+                rec["data_status"] = "recent"
+                rec["last_updated"] = rec.get("arrival_date")
+                rec["district_unavailable"] = district_unavailable
 
             return filtered
         except Exception as e:

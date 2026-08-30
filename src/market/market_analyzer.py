@@ -151,10 +151,22 @@ class MarketAnalyzer:
                 quantity_kg, best_market["modal_price"]
             )
 
-        data_source = self.records[0].get("data_source", "data.gov.in") if self.records else "data.gov.in"
+        if self.records:
+            data_source = self.records[0].get("data_source", "data.gov.in")
+            data_status = self.records[0].get("data_status", "current")
+            last_updated = self.records[0].get("last_updated", None)
+            district_unavailable = self.records[0].get("district_unavailable", False)
+        else:
+            data_source = "unavailable"
+            data_status = "unavailable"
+            last_updated = None
+            district_unavailable = False
 
         return {
             "data_source": data_source,
+            "data_status": data_status,
+            "last_updated": last_updated,
+            "district_unavailable": district_unavailable,
             "total_records_processed": len(self.raw_records),
             "valid_records_analyzed": len(self.records),
             "best_market": {

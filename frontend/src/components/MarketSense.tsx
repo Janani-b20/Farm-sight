@@ -121,6 +121,13 @@ export default function MarketSense({
   // Resolve best/selected target market for transportation calculation
   const targetMarket = selectedMarketOverride || analysisResult?.best_market || districtResult?.best_market;
 
+  const activeState = useLiveLocation ? userLocation?.state : stateName;
+  const activeDistrict = useLiveLocation ? (userLocation?.district ?? '') : district;
+
+  const isRecent = analysisResult?.data_status === 'recent' || districtResult?.data_status === 'recent';
+  const lastUpdated = districtResult?.last_updated || analysisResult?.last_updated;
+  const districtUnavailable = !!(analysisResult?.district_unavailable || districtResult?.district_unavailable);
+
   return (
     <div className="space-y-6">
 
@@ -338,6 +345,18 @@ export default function MarketSense({
 
           {showResults && !loading && ((analysisResult && analysisResult.valid_records_analyzed > 0) || (districtResult && districtResult.valid_records_analyzed > 0)) && (
             <div className="space-y-6 animate-fade-in">
+
+              {isRecent && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-xl flex items-center gap-2 text-sm font-semibold">
+                  <span>🟠 Recent government market price. Last updated: {lastUpdated || 'N/A'}</span>
+                </div>
+              )}
+
+              {districtUnavailable && (
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-800 dark:text-yellow-400 rounded-xl flex items-center gap-2 text-sm">
+                  <span>No recent <strong>{commodity}</strong> price available for <strong>{activeDistrict}</strong>. Recent <strong>{activeState}</strong> market alternatives:</span>
+                </div>
+              )}
 
               {/* Data Source Transparency Badge */}
               <div className="flex items-center justify-between px-1 text-xs">
