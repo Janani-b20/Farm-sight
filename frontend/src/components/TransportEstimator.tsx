@@ -66,7 +66,11 @@ export default function TransportEstimator({
   // ---------------------------------------------------------------------------
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TransportEstimateResponse | null>(null);
+  const [result, setResult] = useState<(TransportEstimateResponse & {
+    distance_source?: string;
+    estimated_travel_duration?: string;
+    ors_road_distance_km?: number | null;
+  }) | null>(null);
 
   // Flags whether live-location coordinates were passed as props
   const locationComingFromProps = userLat !== undefined && userLng !== undefined;
@@ -313,9 +317,15 @@ export default function TransportEstimator({
                     {result.estimated_road_distance_km} <span className="text-xs font-normal text-zinc-400">km</span>
                   </span>
                 </div>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                  Aerial: {result.aerial_distance_km} km &times; 1.3 road factor
-                </p>
+                {result.distance_source === 'openrouteservice' ? (
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                    Live road route • {result.estimated_travel_duration}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                    Fallback: aerial {result.aerial_distance_km} km &times; 1.3 road factor
+                  </p>
+                )}
               </div>
 
               {/* Base transport cost */}
