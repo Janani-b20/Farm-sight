@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from src.backend.routes.disease import router as disease_router
+from src.backend.routes.market import router as market_router
 
 app = FastAPI(
     title="FarmSight API",
@@ -8,6 +9,7 @@ app = FastAPI(
 )
 
 app.include_router(disease_router)
+app.include_router(market_router)
 
 
 @app.get("/")
