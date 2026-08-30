@@ -1,7 +1,14 @@
-﻿.env
+# =========================
+# FarmSight Git Ignore
+# =========================
+
+# Environment / secrets
+.env
 .env.local
+.env.*
 .env.*.local
 
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -12,11 +19,25 @@ venv/
 env/
 .venv/
 
+# Node / frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 npm-debug.log*
 
+# Datasets
+datasets/
+data/
+*.zip
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Temporary ML files
+*.h5
+*.tmp
+
+# OS / editor junk
 .DS_Store
 Thumbs.db
 .vscode/
