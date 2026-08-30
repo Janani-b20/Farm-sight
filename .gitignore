@@ -7,15 +7,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
 .venv/
 env/
+ENV/
 
 # Environment / secrets
 .env
 .env.*
+.env.local
 
 # Datasets
 datasets/
@@ -28,6 +35,10 @@ data/
 # Temporary ML files
 *.h5
 *.tmp
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
 
 # IDE / OS
 .vscode/
