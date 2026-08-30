@@ -117,6 +117,12 @@ class TestAPMCNameNormalization(unittest.TestCase):
 
     def setUp(self):
         self.service = TransportService()
+        self.post_patcher = patch('requests.post')
+        self.mock_post = self.post_patcher.start()
+        self.mock_post.side_effect = Exception("ORS live calls disabled in tests")
+
+    def tearDown(self):
+        self.post_patcher.stop()
 
     def test_full_apmc_name_amreli_resolves(self):
         """
@@ -210,6 +216,12 @@ class TestTransportCostCalculation(unittest.TestCase):
 
     def setUp(self):
         self.service = TransportService()
+        self.post_patcher = patch('requests.post')
+        self.mock_post = self.post_patcher.start()
+        self.mock_post.side_effect = Exception("ORS live calls disabled in tests")
+
+    def tearDown(self):
+        self.post_patcher.stop()
 
     def test_calculate_transport_basic_structure(self):
         """Result must contain all required keys."""
@@ -331,6 +343,12 @@ class TestTransportAPIEndpoint(unittest.TestCase):
             sys.path.insert(0, main_path)
         from main import app
         self.client = TestClient(app)
+        self.post_patcher = patch('requests.post')
+        self.mock_post = self.post_patcher.start()
+        self.mock_post.side_effect = Exception("ORS live calls disabled in tests")
+
+    def tearDown(self):
+        self.post_patcher.stop()
 
     def test_transport_endpoint_success(self):
         """Valid request must return 200 with all expected fields."""
@@ -390,6 +408,116 @@ class TestTransportAPIEndpoint(unittest.TestCase):
         """Request with missing required params must return 422."""
         response = self.client.get("/api/transport", params={"market_name": "Rajkot"})
         self.assertEqual(response.status_code, 422)
+
+
+class TestOpenRouteServiceIntegration(unittest.TestCase):
+    """Tests for OpenRouteService integration and fallback behavior."""
+
+    def setUp(self):
+        self.service = TransportService()
+        self.post_patcher = patch('requests.post')
+        self.mock_post = self.post_patcher.start()
+
+    def tearDown(self):
+        self.post_patcher.stop()
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_ors_success_flow(self):
+        """When ORS returns 200, calculate_transport should use ORS road distance and add duration."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "routes": [
+                {
+                    "summary": {
+                        "distance": 15500.0,
+                        "duration": 1500.0
+                    }
+                }
+            ]
+        }
+        self.mock_post.return_value = mock_response
+
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+        )
+
+        self.mock_post.assert_called_once()
+        _, kwargs = self.mock_post.call_args
+        self.assertEqual(kwargs["headers"]["Authorization"], "test_key")
+        self.assertEqual(kwargs["json"]["coordinates"], [[71.0, 22.0], [70.8022, 22.3039]])
+
+        self.assertEqual(result["ors_road_distance_km"], 15.5)
+        self.assertEqual(result["estimated_travel_duration"], "25 mins")
+        self.assertEqual(result["distance_source"], "openrouteservice")
+        self.assertEqual(result["estimated_road_distance_km"], 15.5)
+        self.assertIn("OpenRouteService", result["note"])
+
+        expected_base_cost = round(self.service.base_cost_rs + (15.5 * self.service.cost_per_quintal_per_km), 2)
+        self.assertEqual(result["base_transport_cost_rs"], expected_base_cost)
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_ors_non_200_fallback(self):
+        """When ORS returns non-200, fallback to Haversine."""
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "Internal Server Error"
+        self.mock_post.return_value = mock_response
+
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+        )
+
+        self.mock_post.assert_called_once()
+        self.assertIsNone(result["ors_road_distance_km"])
+        self.assertIsNone(result["estimated_travel_duration"])
+        self.assertEqual(result["distance_source"], "haversine")
+        self.assertIn("Haversine", result["note"])
+
+    @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})
+    def test_ors_timeout_fallback(self):
+        """When ORS request times out, fallback to Haversine."""
+        from requests.exceptions import Timeout
+        self.mock_post.side_effect = Timeout("Request timed out")
+
+        result = self.service.calculate_transport(
+            market_name="Rajkot",
+            district="Rajkot",
+            state="Gujarat",
+            user_lat=22.0,
+            user_lng=71.0,
+        )
+
+        self.mock_post.assert_called_once()
+        self.assertIsNone(result["ors_road_distance_km"])
+        self.assertIsNone(result["estimated_travel_duration"])
+        self.assertEqual(result["distance_source"], "haversine")
+
+    def test_ors_missing_api_key_fallback(self):
+        """When API key is missing from environment, fallback immediately without call."""
+        with patch.dict(os.environ, {}):
+            if "OPENROUTESERVICE_API_KEY" in os.environ:
+                del os.environ["OPENROUTESERVICE_API_KEY"]
+            result = self.service.calculate_transport(
+                market_name="Rajkot",
+                district="Rajkot",
+                state="Gujarat",
+                user_lat=22.0,
+                user_lng=71.0,
+            )
+
+        self.mock_post.assert_not_called()
+        self.assertIsNone(result["ors_road_distance_km"])
+        self.assertIsNone(result["estimated_travel_duration"])
+        self.assertEqual(result["distance_source"], "haversine")
 
 
 if __name__ == "__main__":

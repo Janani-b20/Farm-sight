@@ -120,7 +120,31 @@ class TransportService:
         aerial_km = self._haversine(
             user_lat, user_lng, mandi["lat"], mandi["lng"]
         )
-        road_km = round(aerial_km * self.ROAD_CORRECTION_FACTOR, 2)
+
+        # Try to get distance and duration from OpenRouteService
+        ors_data = self._query_openrouteservice(
+            user_lat, user_lng, mandi["lat"], mandi["lng"]
+        )
+
+        if ors_data is not None:
+            road_km = ors_data["road_distance_km"]
+            ors_road_distance_km = road_km
+            estimated_travel_duration = self._format_duration(ors_data["duration_seconds"])
+            distance_source = "openrouteservice"
+            note = (
+                "Distance and travel duration are calculated using OpenRouteService live driving routes. "
+                "Cost figures are illustrative; actual rates depend on vehicle type and route."
+            )
+        else:
+            road_km = round(aerial_km * self.ROAD_CORRECTION_FACTOR, 2)
+            ors_road_distance_km = None
+            estimated_travel_duration = None
+            distance_source = "haversine"
+            note = (
+                "Distance is a Haversine aerial estimate with a 1.3x road correction factor. "
+                "Actual road distance may vary. "
+                "Cost figures are illustrative; actual rates depend on vehicle type and route."
+            )
 
         # Base transport cost (fixed for any load)
         base_cost = round(self.base_cost_rs + (road_km * self.cost_per_quintal_per_km), 2)
@@ -141,11 +165,10 @@ class TransportService:
             "estimated_quantity_transport_cost_rs": None,
             "status": "success",
             "message": "Transport estimate calculated successfully.",
-            "note": (
-                "Distance is a Haversine aerial estimate with a 1.3x road correction factor. "
-                "Actual road distance may vary. "
-                "Cost figures are illustrative; actual rates depend on vehicle type and route."
-            ),
+            "note": note,
+            "ors_road_distance_km": ors_road_distance_km,
+            "estimated_travel_duration": estimated_travel_duration,
+            "distance_source": distance_source,
         }
 
         if quantity_kg is not None and quantity_kg > 0:
@@ -171,9 +194,69 @@ class TransportService:
         except MandiNotFoundError:
             return None
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
+    def _query_openrouteservice(
+        self, user_lat: float, user_lng: float, mandi_lat: float, mandi_lng: float
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Queries OpenRouteService for directions between user and mandi coordinates.
+        Returns a dictionary with 'road_distance_km' and 'duration_seconds' if successful,
+        or None if the lookup fails or key is missing.
+        """
+        api_key = os.getenv("OPENROUTESERVICE_API_KEY")
+        if not api_key:
+            logger.warning("OPENROUTESERVICE_API_KEY is not set. Falling back to Haversine.")
+            return None
+
+        url = os.getenv(
+            "OPENROUTESERVICE_URL",
+            "https://api.openrouteservice.org/v2/directions/driving-car",
+        )
+
+        headers = {
+            "Authorization": api_key,
+            "Content-Type": "application/json",
+        }
+
+        # Coordinates in [longitude, latitude] order per ORS spec
+        payload = {
+            "coordinates": [[user_lng, user_lat], [mandi_lng, mandi_lat]]
+        }
+
+        try:
+            import requests
+            response = requests.post(url, json=payload, headers=headers, timeout=5.0)
+            if response.status_code == 200:
+                data = response.json()
+                if "routes" in data and len(data["routes"]) > 0:
+                    summary = data["routes"][0].get("summary", {})
+                    distance_meters = summary.get("distance")
+                    duration_seconds = summary.get("duration")
+                    if distance_meters is not None and duration_seconds is not None:
+                        return {
+                            "road_distance_km": round(distance_meters / 1000.0, 2),
+                            "duration_seconds": float(duration_seconds),
+                        }
+                logger.warning(f"Unexpected ORS response structure: {data}")
+            else:
+                logger.warning(
+                    f"OpenRouteService returned status code {response.status_code}"
+                )
+        except Exception as e:
+            logger.warning(f"Error querying OpenRouteService: {e}")
+
+        return None
+
+    @staticmethod
+    def _format_duration(seconds: float) -> str:
+        """Formats duration in seconds to a human-readable string."""
+        minutes = int(round(seconds / 60.0))
+        if minutes < 60:
+            return f"{minutes} min" + ("s" if minutes != 1 else "")
+        hours = minutes // 60
+        rem_mins = minutes % 60
+        if rem_mins == 0:
+            return f"{hours} hour" + ("s" if hours != 1 else "")
+        return f"{hours} hour" + ("s" if hours != 1 else "") + f" {rem_mins} min" + ("s" if rem_mins != 1 else "")
 
     def _haversine(
         self, lat1: float, lng1: float, lat2: float, lng2: float
