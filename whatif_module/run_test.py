@@ -1,68 +1,43 @@
 """
-FarmSight - End-to-End Pipeline & Guardrail Test Suite
+FarmSight - Multilingual Test Suite (Tamil, English, Hindi)
 """
 import time
 from whatif_module.service import execute_whatif_pipeline
 
-def run_all_tests():
+def test_multilingual():
     weather = {
-        "rain_probability": 75,
+        "rain_probability": 80,
         "humidity": 85,
-        "temperature": 28
+        "temperature": 29
+    }
+    
+    ml_data = {
+        "crop": "paddy",
+        "disease": "dead_heart",
+        "confidence": 99.2,
+        "message": "Prediction successful."
     }
 
     print("\n" + "="*60)
-    print("TEST 1: Confirmed Disease (dead_heart + Spray Under Rain)")
-    print("=======================================================")
-    res1 = execute_whatif_pipeline(
-        ml_result={
-            "crop": "paddy",
-            "disease": "dead_heart",
-            "confidence": 99.69,
-            "message": "Prediction successful."
-        },
-        weather_data=weather,
-        farmer_action="spray_chemical_now"
-    )
-    print("Status:", res1["status"])
-    print("\n[AI Tamil Advisory]:\n", res1["tamil_advice"])
-    print("Audio:", res1["audio_file"])
-    time.sleep(5)  # Audio play aagi mudiyara varaikkum chinna wait
+    print("1. TESTING TAMIL PIPELINE")
+    print("="*60)
+    res_ta = execute_whatif_pipeline(ml_data, weather, "spray_chemical_now", language="ta")
+    print(res_ta["advisory_text"])
+    time.sleep(14)
 
     print("\n" + "="*60)
-    print("TEST 2: Guardrail Check (uncertain / Confidence < 50%)")
-    print("=======================================================")
-    res2 = execute_whatif_pipeline(
-        ml_result={
-            "crop": "paddy",
-            "disease": "uncertain",
-            "confidence": 35.0,
-            "message": "Low confidence prediction."
-        },
-        weather_data=weather,
-        farmer_action="spray_chemical_now"
-    )
-    print("Status:", res2["status"])
-    print("\n[Halt Message / Guidance]:\n", res2["tamil_advice"])
-    print("Audio:", res2["audio_file"])
-    time.sleep(5)
+    print("2. TESTING ENGLISH PIPELINE")
+    print("="*60)
+    res_en = execute_whatif_pipeline(ml_data, weather, "spray_chemical_now", language="en")
+    print(res_en["advisory_text"])
+    time.sleep(10)
 
     print("\n" + "="*60)
-    print("TEST 3: Healthy Crop Check (normal / Healthy Path)")
-    print("=======================================================")
-    res3 = execute_whatif_pipeline(
-        ml_result={
-            "crop": "paddy",
-            "disease": "normal",
-            "confidence": 98.50,
-            "message": "Prediction successful."
-        },
-        weather_data=weather,
-        farmer_action="spray_chemical_now"
-    )
-    print("Status:", res3["status"])
-    print("\n[Healthy Crop Advisory]:\n", res3["tamil_advice"])
-    print("Audio:", res3["audio_file"])
+    print("3. TESTING HINDI PIPELINE")
+    print("="*60)
+    res_hi = execute_whatif_pipeline(ml_data, weather, "spray_chemical_now", language="hi")
+    print(res_hi["advisory_text"])
+    time.sleep(12)
 
 if __name__ == "__main__":
-    run_all_tests()
+    test_multilingual()

@@ -1,49 +1,71 @@
+"""
+FarmSight - Multilingual AI Advisory Engine with Fallbacks
+Supports: Tamil (ta), English (en), Hindi (hi)
+"""
 import os
 from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
 
-def generate_farmer_explanation(simulation_result: dict, crop_name: str = "நெல்", weather_info: dict = None) -> str:
-    # Handle halted condition (Uncertain disease)
-    if simulation_result.get("status") == "halted":
-        return simulation_result.get("reason", "பயிரின் புகைப்படத்தை மீண்டும் தெளிவாக பதிவேற்றவும்.")
+FALLBACK_MESSAGES = {
+    "ta": (
+        "1. மழையின் காரணமாக பூச்சிக்கொல்லி மருந்து வீணாக வாய்ப்புள்ளது, எனவே தெளிப்பதை தள்ளிப்போடவும்.\n"
+        "2. மழை நின்ற பிறகு வயலை ஆய்வு செய்து சரியான மருந்தினை தெளிக்கவும்."
+    ),
+    "en": (
+        "1. High risk of chemical wash-off due to rain; postpone spraying.\n"
+        "2. Inspect field after rainfall and apply recommended treatment under clear skies."
+    ),
+    "hi": (
+        "1. बारिश के कारण कीटनाशक बहने का जोखिम है, कृपया छिड़काव स्थगित करें।\n"
+        "2. बारिश रुकने के बाद खेत का निरीक्षण करें और मौसम साफ होने पर छिड़काव करें।"
+    )
+}
 
-    # Handle healthy crop path
-    if simulation_result.get("condition") == "healthy":
-        return f"பயிர் ஆரோக்கியமாக உள்ளது. {simulation_result.get('reason')}"
+LANGUAGE_PROMPTS = {
+    "ta": "Explain in simple, conversational Tamil for rural farmers using 2 short bullet points.",
+    "en": "Explain in simple, clear English using 2 short bullet points for farmers.",
+    "hi": "Explain in simple, conversational Hindi (Devanagari script) using 2 short bullet points for farmers."
+}
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        # Fallback if API key is missing
-        return f"பரிந்துரை: {simulation_result.get('reason')}"
-
-    prompt = f"""
-    You are an expert Tamil Agricultural Advisor speaking directly to a rural farmer.
-    
-    Context Details:
-    - Crop: {crop_name}
-    - Simulation Result: {simulation_result}
-    - Weather Information: {weather_info}
-
-    CRITICAL RULES:
-    1. Respond STRICTLY and ENTIRELY in pure Tamil script (தமிழ் எழுத்துகளில் மட்டும்).
-    2. Do NOT use English words or Tanglish.
-    3. Provide exactly 3 short bullet points:
-       * தற்போதைய சூழல் மற்றும் ஆபத்து
-       * விவசாயி செய்ய வேண்டிய உடனடி நடவடிக்கை
-       * இதனால் கிடைக்கும் நேரடி பலன்
-    4. Keep it natural and simple for audio speech.
+def generate_tamil_advisory(sim_result: dict, language: str = "ta") -> str:
     """
+    Generates localized plain-language advisory using Gemini.
+    Language code: 'ta' (Tamil), 'en' (English), 'hi' (Hindi).
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    lang = language.lower() if language.lower() in FALLBACK_MESSAGES else "ta"
+
+    if not api_key:
+        return FALLBACK_MESSAGES[lang]
 
     try:
         client = genai.Client(api_key=api_key)
+        instruction = LANGUAGE_PROMPTS[lang]
+        
+        prompt = f"""
+You are an agricultural advisor assistant for the FarmSight app.
+Language Instruction: {instruction}
+
+Simulation Data:
+- Crop: {sim_result.get('crop')}
+- Detected Condition: {sim_result.get('disease')}
+- Action Planned: {sim_result.get('action')}
+- Weather Risk Factor: Rain {sim_result.get('weather_conditions', {}).get('rain_probability')}%
+- Simulation Outcome: {sim_result.get('simulation_outcome')}
+- Financial / Yield Risk: {sim_result.get('risk_level')}
+
+Provide only the 2 actionable bullet points without any introductory or markdown heading text.
+"""
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=prompt
+            contents=prompt,
         )
-        return response.text.strip()
+        if response and response.text:
+            return response.text.strip()
+        return FALLBACK_MESSAGES[lang]
+
     except Exception as e:
-        # Graceful fallback if Gemini API fails
-        print(f"[Gemini Fallback Warning]: {e}")
-        return f"வானிலை எச்சரிக்கை: {simulation_result.get('reason')}"
+        print(f"[Warning] Gemini API failed: {e}. Switching to offline fallback.")
+        return FALLBACK_MESSAGES[lang]

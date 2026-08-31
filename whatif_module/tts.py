@@ -1,25 +1,29 @@
-from gtts import gTTS
+"""
+FarmSight - Multilingual Text-to-Speech Engine
+Supports: Tamil (ta), English (en), Hindi (hi)
+"""
 import os
+import subprocess
+from gtts import gTTS
 
-def speak_tamil_advice(tamil_text: str, output_filename: str = "farmer_advice.mp3") -> str:
+def text_to_speech(text: str, output_path: str = "advice.mp3", language: str = "ta", auto_play: bool = True) -> str:
     """
-    Converts pure Tamil explanation text into an audio MP3 file and plays it.
-    Returns the file path on success, or empty string on failure.
+    Converts plain advisory text to audio in specified language ('ta', 'en', 'hi').
+    Uses Windows native media player for zero-dependency playback.
     """
     try:
-        # Markdown asterisks and bullets clean-up for natural audio
-        clean_text = tamil_text.replace("*", "").replace("•", "").strip()
+        lang = language.lower() if language.lower() in ["ta", "en", "hi"] else "ta"
+        tts = gTTS(text=text, lang=lang, slow=False)
+        tts.save(output_path)
 
-        # Generate speech in Tamil
-        tts = gTTS(text=clean_text, lang='ta', slow=False)
-        tts.save(output_filename)
-        print(f"\n[Audio Success]: '{output_filename}' generated successfully!")
+        if auto_play and os.path.exists(output_path):
+            try:
+                # Windows built-in media player playback (No third-party packages required)
+                os.startfile(output_path)
+            except Exception as play_err:
+                print(f"[Audio Notice] Local playback device skipped: {play_err}")
 
-        # Automatically play the audio file on Windows
-        os.system(f'start {output_filename}')
-        
-        return output_filename
-
+        return output_path
     except Exception as e:
-        print(f"\n[TTS Error]: {e}\n")
+        print(f"[Error] TTS Synthesis failed: {e}")
         return ""
