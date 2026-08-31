@@ -176,13 +176,6 @@ def get_disease_advice(crop: str, disease: str, confidence: float, weather_conte
     - Do not repeat the crop/disease name in every bullet.
     """
 
-    # Ask Gemini to enforce valid JSON at the API level (response_mime_type),
-    # instead of relying only on prompt instructions.
-    #
-    # IMPORTANT: gemini-2.5-flash uses an internal "thinking" budget by
-    # default, which eats into max_output_tokens and was causing the final
-    # JSON answer to get cut off mid-string. Disabling thinking_budget=0
-    # gives the full token budget to the actual JSON output.
     generation_config = types.GenerateContentConfig(
         response_mime_type="application/json",
         max_output_tokens=2048,
@@ -199,8 +192,6 @@ def get_disease_advice(crop: str, disease: str, confidence: float, weather_conte
         )
         raw_text = (response.text or "").strip()
 
-        # Log finish_reason for debugging — "MAX_TOKENS" here would mean
-        # the budget is still too small even after disabling thinking.
         try:
             finish_reason = response.candidates[0].finish_reason
             if str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
@@ -208,15 +199,10 @@ def get_disease_advice(crop: str, disease: str, confidence: float, weather_conte
         except Exception:
             pass
 
-        # Defensive parsing: even with response_mime_type enforced, extract
-        # the first {...} block in case of any stray characters.
         match = re.search(r"\{.*\}", raw_text, re.DOTALL)
         json_str = match.group(0) if match else raw_text
         parsed = json.loads(json_str)
 
-        # Extra guard: if Gemini returned technically-valid JSON but with
-        # empty/missing required lists, treat it as a failure and fall back
-        # rather than showing the farmer an empty card.
         if not parsed.get("what_to_do_now"):
             print("Gemini returned JSON but what_to_do_now was empty — using fallback")
             return _static_fallback(crop_readable, disease_readable, sources)
@@ -234,7 +220,5 @@ def get_disease_advice(crop: str, disease: str, confidence: float, weather_conte
         return _static_fallback(crop_readable, disease_readable, sources)
 
     except Exception as e:
-        # Covers quota exceeded (429 RESOURCE_EXHAUSTED), network errors,
-        # timeouts, auth errors — anything at all. Farmer never sees this.
         print(f"Gemini call failed, using static fallback: {e}")
         return _static_fallback(crop_readable, disease_readable, sources)

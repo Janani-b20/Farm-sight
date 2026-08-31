@@ -11,9 +11,6 @@ class MLPredictionInput(BaseModel):
     disease: str
     confidence: float = Field(..., ge=0, le=100, description="Model confidence as a percentage 0-100")
     message: str = ""
-    # Optional one-line summary of current live weather, e.g. "Temp 32C, Humidity 78%, Rain probability 45%".
-    # Frontend can pass this from the already-fetched Weather Intelligence data so the RAG response
-    # can include a context-aware weather warning line.
     weather_context: Optional[str] = None
 
 
@@ -30,7 +27,7 @@ class AnalysisResponse(BaseModel):
     For "disease_detected", the structured fields are populated instead so the
     frontend can render a clean farmer-facing card instead of one big paragraph.
     """
-    status: str          # "uncertain" | "normal" | "disease_detected"
+    status: str           # "uncertain" | "normal" | "disease_detected"
     analysis: str = ""   # used for uncertain/normal simple messages
     crop: Optional[str] = None
     disease: Optional[str] = None

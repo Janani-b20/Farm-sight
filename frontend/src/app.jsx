@@ -12,29 +12,25 @@ export default function App() {
     recommendation: 'Fetching live meteorological data from Open-Meteo for precise farm advisory...',
   });
 
-  // Disease Intelligence state — now tracks status from the guardrail pipeline
+  // Disease Intelligence state — tracks status from the guardrail pipeline
   const [status, setStatus] = useState(null); // null | "uncertain" | "normal" | "disease_detected"
-  const [analysis, setAnalysis] = useState(''); // used only for uncertain/normal simple messages
+  const [analysis, setAnalysis] = useState('');
   const [whyThis, setWhyThis] = useState([]);
   const [whatToDo, setWhatToDo] = useState([]);
   const [treatment, setTreatment] = useState([]);
   const [weatherWarning, setWeatherWarning] = useState(null);
-  const [sources, setSources] = useState([]); // [{title, url}]
+  const [sources, setSources] = useState([]);
   const [showWhatIf, setShowWhatIf] = useState(false);
 
   // Image upload flow state
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [predictionMeta, setPredictionMeta] = useState(null); // {crop, disease, confidence} from /api/predict
+  const [predictionMeta, setPredictionMeta] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);
 
-  // Crop selection — REQUIRED now. Each crop has its own separately-trained
-  // model (paddy / cotton / groundnut), so the farmer must tell us which
-  // crop it is before we call /api/predict. We intentionally do NOT try to
-  // auto-detect crop by running all 3 models and comparing confidence —
-  // that was tested and found unsafe (cross-crop misclassification at high
-  // confidence). Defaults to "paddy" so the button is always usable.
-  const [selectedCrop, setSelectedCrop] = useState('paddy');
+  // Auto-detection state
+  const [cropDetecting, setCropDetecting] = useState(false);
+  const [cropAutoNote, setCropAutoNote] = useState('');
 
   const hasFetchedRef = useRef(false);
 
@@ -58,7 +54,7 @@ export default function App() {
       const country = geoData?.countryName || '';
       if (place) return `${place}${country ? ', ' + country : ''}`;
     } catch (err) {
-      console.warn('BigDataCloud geocoding failed, trying fallback provider:', err.message);
+      console.warn('BigDataCloud geocoding failed:', err.message);
     }
 
     try {
@@ -70,17 +66,17 @@ export default function App() {
       const state = addr.state || '';
       if (place) return `${place}${state ? ', ' + state : ''}`;
     } catch (err) {
-      console.warn('Nominatim geocoding failed too:', err.message);
+      console.warn('Nominatim geocoding failed:', err.message);
     }
 
-    return 'Chennai Region, Tamil Nadu';
+    return 'Unknown location — please edit';
   }
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
 
-    async function fetchRealFarmWeather(lat, lon) {
+    async function fetchRealFarmWeather(lat, lon, locationIsApprox) {
       try {
         const weatherData = await fetchWithTimeout(
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation_probability`,
@@ -116,21 +112,19 @@ export default function App() {
             humidity: `${humidity}%`,
             rainProb: `${rain}%`,
             condition: conditionText,
-            location: liveLocationName,
+            location: locationIsApprox ? `${liveLocationName} (approx.)` : liveLocationName,
             recommendation: advisoryText,
           });
-        } else {
-          throw new Error('Open-Meteo returned no current weather block');
         }
       } catch (err) {
-        console.error('Weather fetch pipeline failed:', err.message);
+        console.error('Weather fetch failed:', err.message);
         setWeather({
-          temp: '28.5°C',
-          humidity: '75%',
-          rainProb: '10%',
-          condition: 'Cloudy / Stable',
-          location: 'Chennai Region, Tamil Nadu',
-          recommendation: '✅ Weather data retrieved with fallback. Monitor soil moisture levels regularly.',
+          temp: '--',
+          humidity: '--',
+          rainProb: '--',
+          condition: 'Weather unavailable',
+          location: 'Unknown location — please edit',
+          recommendation: '⚠️ Could not fetch live weather data. Please check connection.',
         });
       }
     }
@@ -138,26 +132,25 @@ export default function App() {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          fetchRealFarmWeather(lat, lon);
+          fetchRealFarmWeather(position.coords.latitude, position.coords.longitude, false);
         },
-        (error) => {
-          console.warn('GPS permission denied or unavailable, using regional hub:', error.message);
-          fetchRealFarmWeather(13.0827, 80.2707);
+        () => {
+          setWeather({
+            temp: '--',
+            humidity: '--',
+            rainProb: '--',
+            condition: 'Location unavailable',
+            location: 'Enable location for live weather',
+            recommendation: '⚠️ Location permission denied or unavailable.',
+          });
         },
-        { timeout: 10000, enableHighAccuracy: true }
+        { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
       );
-    } else {
-      fetchRealFarmWeather(13.0827, 80.2707);
     }
   }, []);
 
-  // Builds a compact one-line weather summary from the already-fetched
-  // Weather Intelligence data, so the RAG response can include a relevant
-  // weather_warning (e.g. "rain expected, avoid spraying now").
   const buildWeatherContext = () => {
-    if (weather.temp === '--') return null; // weather hasn't loaded yet
+    if (weather.temp === '--') return null;
     return `Temp ${weather.temp}, Humidity ${weather.humidity}, Rain probability ${weather.rainProb}, Condition: ${weather.condition}`;
   };
 
@@ -183,8 +176,6 @@ export default function App() {
     setShowWhatIf(!!data.show_whatif);
   };
 
-  // Shared analyze call — feeds a model prediction (from /api/predict) into
-  // the guardrail + RAG pipeline.
   const runAnalysis = async (predictionPayload) => {
     resetAnalysisState();
     try {
@@ -194,44 +185,59 @@ export default function App() {
         body: JSON.stringify({ ...predictionPayload, weather_context: buildWeatherContext() }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       applyAnalysisResponse(data);
     } catch (error) {
       console.error('Analyze request failed:', error.message);
       setStatus('uncertain');
-      setAnalysis('Could not reach the analysis service. Please check your backend is running and try again.');
+      setAnalysis('Could not reach the analysis service. Please check your backend is running.');
     }
   };
 
-  const handleImageSelect = (e) => {
+  // Fully automatic flow: Detect crop first, then pass crop + image to predict
+  const handleImageSelectAndAnalyze = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setSelectedImage(file);
     setImagePreview(URL.createObjectURL(file));
     setPredictionMeta(null);
     setStatus(null);
-  };
-
-  const handleAnalyzePhoto = async () => {
-    if (!selectedImage) return;
+    setCropAutoNote('');
     setUploadLoading(true);
-    setStatus(null);
-    setPredictionMeta(null);
+    setCropDetecting(true);
+
     try {
-      // Step 1: send image + selected crop to /api/predict.
-      // Backend routes directly to that crop's real model (or the demo
-      // stub if the real model isn't loaded) — no crop auto-detection.
-      const formData = new FormData();
-      formData.append('file', selectedImage);
-      formData.append('crop', selectedCrop);
+      // Step 1: Auto-detect crop via Gemini Vision
+      const cropFormData = new FormData();
+      cropFormData.append('file', file);
+
+      const detectRes = await fetch('http://localhost:8000/api/detect-crop', {
+        method: 'POST',
+        body: cropFormData,
+      });
+
+      let resolvedCrop = 'paddy'; // Default fallback if vision fails
+      if (detectRes.ok) {
+        const detectResult = await detectRes.json();
+        if (detectResult.crop && detectResult.crop !== 'unknown') {
+          resolvedCrop = detectResult.crop;
+          setCropAutoNote(`✅ Auto-detected crop: ${resolvedCrop}`);
+        } else {
+          setCropAutoNote('⚠️ Crop detection uncertain, defaulting to paddy model.');
+        }
+      }
+      setCropDetecting(false);
+
+      // Step 2: Call /api/predict with file AND the required crop parameter
+      const predictFormData = new FormData();
+      predictFormData.append('file', file);
+      predictFormData.append('crop', resolvedCrop);
 
       const predictRes = await fetch('http://localhost:8000/api/predict', {
         method: 'POST',
-        body: formData,
+        body: predictFormData,
       });
 
       if (!predictRes.ok) {
@@ -241,14 +247,15 @@ export default function App() {
       const prediction = await predictRes.json();
       setPredictionMeta(prediction);
 
-      // Step 2: automatically chain the prediction into /api/analyze
+      // Step 3: Chain prediction into analysis pipeline
       await runAnalysis(prediction);
     } catch (error) {
-      console.error('Photo analysis failed:', error.message);
+      console.error('Pipeline failed:', error.message);
       setStatus('uncertain');
-      setAnalysis('Could not analyze the photo. Please check your backend is running and try again.');
+      setAnalysis('Could not automatically process the photo. Please check your backend connection.');
     } finally {
       setUploadLoading(false);
+      setCropDetecting(false);
     }
   };
 
@@ -256,10 +263,10 @@ export default function App() {
     setSelectedImage(null);
     setImagePreview(null);
     setPredictionMeta(null);
+    setCropAutoNote('');
     resetAnalysisState();
   };
 
-  // Visual config per status — keeps the render section clean
   const statusConfig = {
     uncertain: {
       bg: '#fef2f2', border: '#fecaca', titleColor: '#b91c1c',
@@ -283,12 +290,24 @@ export default function App() {
         <h1 style={{ fontSize: '28px', color: '#166534', margin: 0, fontWeight: 'bold' }}>Farm-Sight AI Dashboard</h1>
       </div>
 
-      {/* Weather Intelligence Section (unchanged) */}
+      {/* Weather Intelligence Section */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px', border: '1px solid #e5e7eb' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontSize: '20px', margin: '0 0 5px 0', color: '#1f2937' }}>🌧️ Weather Intelligence</h2>
-            <span style={{ fontSize: '14px', color: '#dc2626', fontWeight: '500' }}>📍 {weather.location}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '14px' }}>📍</span>
+              <input
+                type="text"
+                value={weather.location}
+                onChange={(e) => setWeather((prev) => ({ ...prev, location: e.target.value }))}
+                style={{
+                  fontSize: '14px', color: '#dc2626', fontWeight: '500',
+                  border: 'none', borderBottom: '1px dashed #dc2626',
+                  background: 'transparent', padding: '2px 0', width: '260px',
+                }}
+              />
+            </div>
           </div>
           <span style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>Live GPS Data</span>
         </div>
@@ -317,7 +336,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Disease Intelligence Section (status-aware) */}
+      {/* Disease Intelligence Section */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '20px', margin: 0, color: '#1f2937' }}>🦠 Disease Intelligence</h2>
@@ -326,55 +345,23 @@ export default function App() {
 
         {/* Photo Upload Flow */}
         <div style={{ border: '2px dashed #86efac', borderRadius: '10px', padding: '20px', marginBottom: '24px', backgroundColor: '#f9fffa' }}>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#166534', marginBottom: '10px' }}>
-            📸 Upload Crop Photo for AI Diagnosis
-          </div>
-
-          {/* Crop selector — REQUIRED before analyzing. Each crop routes to
-              its own dedicated model on the backend. */}
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '600', color: '#374151', marginRight: '10px' }}>
-              Select Crop / பயிரைத் தேர்வு செய்யவும்:
-            </label>
-            <select
-              value={selectedCrop}
-              onChange={(e) => setSelectedCrop(e.target.value)}
-              style={{
-                padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db',
-                fontSize: '13px', color: '#374151', backgroundColor: '#ffffff', cursor: 'pointer',
-              }}
-            >
-              <option value="paddy">நெல் / Paddy</option>
-              <option value="cotton">பருத்தி / Cotton</option>
-              <option value="groundnut">நிலக்கடலை / Groundnut</option>
-            </select>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#166534', marginBottom: '14px' }}>
+            📸 Upload Crop Photo for Instant AI Diagnosis & Auto-Detection
           </div>
 
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
             <label style={{
               display: 'inline-block', padding: '10px 18px', borderRadius: '6px',
-              backgroundColor: '#ffffff', border: '1px solid #d1d5db', fontSize: '13px',
-              cursor: 'pointer', color: '#374151', fontWeight: '500',
+              backgroundColor: '#15803d', border: 'none', fontSize: '13px',
+              cursor: 'pointer', color: '#ffffff', fontWeight: 'bold',
             }}>
-              Choose Photo
-              <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} />
+              {uploadLoading ? 'Analyzing Photo...' : 'Choose Photo & Predict'}
+              <input type="file" accept="image/*" onChange={handleImageSelectAndAnalyze} disabled={uploadLoading} style={{ display: 'none' }} />
             </label>
 
             {imagePreview && (
               <img src={imagePreview} alt="Selected crop" style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db' }} />
             )}
-
-            <button
-              onClick={handleAnalyzePhoto}
-              disabled={!selectedImage || uploadLoading}
-              style={{
-                backgroundColor: selectedImage ? '#15803d' : '#9ca3af', color: '#fff', border: 'none',
-                padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold',
-                cursor: selectedImage ? 'pointer' : 'not-allowed', opacity: uploadLoading ? 0.7 : 1,
-              }}
-            >
-              {uploadLoading ? 'Analyzing Photo...' : 'Analyze Photo'}
-            </button>
 
             {selectedImage && (
               <button
@@ -386,12 +373,15 @@ export default function App() {
             )}
           </div>
 
+          {(cropDetecting || cropAutoNote) && (
+            <div style={{ fontSize: '12px', color: cropDetecting ? '#6b7280' : '#166534', marginTop: '12px' }}>
+              {cropDetecting ? '🔍 Auto-detecting crop & running diagnosis...' : cropAutoNote}
+            </div>
+          )}
+
           {predictionMeta && (
             <div style={{ marginTop: '12px', fontSize: '12px', color: '#4b5563', backgroundColor: '#f3f4f6', padding: '8px 12px', borderRadius: '6px' }}>
               Model output: <strong>{predictionMeta.crop}</strong> · <strong>{predictionMeta.disease}</strong> · confidence <strong>{predictionMeta.confidence}%</strong>
-              {predictionMeta.message?.includes('no filename match') && (
-                <span style={{ color: '#b45309', marginLeft: '6px' }}>(demo stub — real model not active for this request)</span>
-              )}
             </div>
           )}
         </div>
@@ -403,7 +393,6 @@ export default function App() {
             borderRadius: '8px',
             padding: '20px',
           }}>
-            {/* Uncertain / Normal paths — simple message, no structured card */}
             {status !== 'disease_detected' && (
               <>
                 <h3 style={{ fontSize: '16px', color: statusConfig[status].titleColor, marginTop: 0, marginBottom: '10px' }}>
@@ -423,7 +412,6 @@ export default function App() {
               </>
             )}
 
-            {/* Disease detected — structured, scannable, farmer-facing card */}
             {status === 'disease_detected' && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
@@ -483,12 +471,6 @@ export default function App() {
                   </div>
                 )}
               </>
-            )}
-
-            {showWhatIf && (
-              <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#eff6ff', border: '1px dashed #93c5fd', borderRadius: '6px', fontSize: '13px', color: '#1d4ed8' }}>
-                🧪 What-If module would render here (next build step).
-              </div>
             )}
           </div>
         )}

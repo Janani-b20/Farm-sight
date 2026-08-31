@@ -10,6 +10,7 @@ from src.services.rag_service import get_rag_response, get_disease_advice
 from src.services.model_service import predict_disease
 from src.schemas import MLPredictionInput, AnalysisResponse
 from src.services.guardrail_service import evaluate_prediction
+from src.services.crop_vision_service import detect_crop_from_image
 
 app = FastAPI(title="Farm-Sight API")
 
@@ -147,3 +148,12 @@ def analyze_prediction(data: MLPredictionInput):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"RAG pipeline failed: {str(e)}")
+    
+
+@app.post("/api/detect-crop")
+async def detect_crop(file: UploadFile = File(...)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
+    image_bytes = await file.read()
+    result = detect_crop_from_image(image_bytes)
+    return result
