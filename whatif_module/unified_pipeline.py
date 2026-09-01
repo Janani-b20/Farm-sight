@@ -71,13 +71,15 @@ class FarmSightUnifiedPipeline:
             )
         except Exception:
             disease_rag_context = {
-                "treatment": ["Apply recommended organic fungicide", "Ensure proper soil drainage"],
-                "why_this_happening": ["High humidity environment supports fungal growth"]
+                "treatment": ["Apply recommended organic or chemical spray", "Ensure proper drainage"],
+                "why_this_happening": ["Humid conditions and favorable temperatures support pathogen development"]
             }
 
         print(f"[3/4] Fetching Live Mandi Market prices for {crop} in {district}, {state}...")
         market_records = []
-        modal_price = 2400.0  # Fallback price per quintal
+        # Fallback modal prices for supported crops (Paddy, Groundnut, Cotton)
+        default_prices = {"paddy": 2400.0, "groundnut": 6800.0, "cotton": 7500.0}
+        modal_price = default_prices.get(crop.lower(), 3000.0)
         
         if self.market_service:
             try:
@@ -88,7 +90,7 @@ class FarmSightUnifiedPipeline:
                 )
                 if records and isinstance(records, list):
                     market_records = records
-                    modal_price = float(records[0].get("modal_price", 2400.0) or 2400.0)
+                    modal_price = float(records[0].get("modal_price", modal_price) or modal_price)
             except Exception as m_err:
                 print(f"[Market Notice] Using fallback market pricing: {m_err}")
 
@@ -116,17 +118,18 @@ class FarmSightUnifiedPipeline:
         plain_advisory_text = advisory_result.get("advisory_text", "")
         audio_file = f"unified_{crop}_{disease}_{language}_advice.mp3"
         
-        # Multilingual Contextual Voice Headers
+        # Supported Crops & Diseases Multilingual Translations
         disease_display_ta = {
             "blast": "குலை நோய்",
             "tikka_leaf_spot": "டிக்கா இலைப்புள்ளி நோய்",
-            "early_blight": "இலைக்கருகல் நோய்"
+            "bacterial_blight": "பாக்டீரியா இலைக்கருகல் நோய்",
+            "bollworm": "காய்ப்புழு தாக்குதல்"
         }.get(disease.lower(), disease)
 
         crop_display_ta = {
             "paddy": "நெற்பயிர்",
             "groundnut": "நிலக்கடலை",
-            "tomato": "தக்காளி"
+            "cotton": "பருத்தி"
         }.get(crop.lower(), crop)
 
         if language == "ta":
@@ -189,7 +192,6 @@ class FarmSightUnifiedPipeline:
                 language=language
             )
             all_results.append(res)
-            # Small pause between audio playback for clean separation
             time.sleep(1.0)
 
         print("\n==========================================")
@@ -205,15 +207,16 @@ class FarmSightUnifiedPipeline:
 if __name__ == "__main__":
     pipeline = FarmSightUnifiedPipeline()
 
+    # Supported Crops Evaluation: Paddy, Groundnut, Cotton
     multi_crop_data = [
         {"crop": "paddy", "disease": "blast", "confidence": 92.0, "action": "spray_fungicide"},
         {"crop": "groundnut", "disease": "tikka_leaf_spot", "confidence": 88.0, "action": "spray_fungicide"},
-        {"crop": "tomato", "disease": "early_blight", "confidence": 85.0, "action": "spray_copper_fungicide"}
+        {"crop": "cotton", "disease": "bacterial_blight", "confidence": 89.0, "action": "spray_copper_oxychloride"}
     ]
 
     pipeline.run_batch_pipeline(
         farm_reports=multi_crop_data,
         state="Tamil Nadu",
         district="Thanjavur",
-        language="hi"
+        language="en"
     )
