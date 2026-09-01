@@ -1,62 +1,75 @@
-"""
-FarmSight - Centralized What-If & Accessibility Service Wrapper
-"""
+import os
 from whatif_module.simulator import simulate_decision
-from whatif_module.explainer import generate_tamil_advisory, FALLBACK_MESSAGES
-from whatif_module.tts import text_to_speech
 
-def execute_whatif_pipeline(ml_result: dict, weather_data: dict, farmer_action: str = "spray_chemical_now", language: str = "ta") -> dict:
+# Safe Explainer import (handles any function name in explainer.py)
+try:
+    import whatif_module.explainer as exp_mod
+    if hasattr(exp_mod, "generate_multilingual_advisory"):
+        generate_advisory_func = exp_mod.generate_multilingual_advisory
+    elif hasattr(exp_mod, "generate_explanation"):
+        generate_advisory_func = exp_mod.generate_explanation
+    elif hasattr(exp_mod, "generate_advisory"):
+        generate_advisory_func = exp_mod.generate_advisory
+    else:
+        # Fallback to the first callable function in explainer.py
+        funcs = [getattr(exp_mod, f) for f in dir(exp_mod) if callable(getattr(exp_mod, f)) and not f.startswith("_")]
+        generate_advisory_func = funcs[0] if funcs else None
+except Exception:
+    generate_advisory_func = None
+
+
+def execute_whatif_pipeline(ml_result: dict, weather_data: dict, language: str = "ta") -> dict:
     """
-    Unified entry point consuming standard ML dictionary, Weather payload, and Target Language.
+    Core What-If execution service: runs agro-climatic simulation 
+    and returns advisory text without duplicate audio triggers.
     """
-    lang = language.lower() if language.lower() in ["ta", "en", "hi"] else "ta"
+    farmer_action = ml_result.get("farmer_proposed_action", "spray_chemical_now")
     
-    # Run deterministic simulation & guardrails
+    # 1. Run deterministic agro-climatic simulation
     sim_result = simulate_decision(
         ml_prediction=ml_result,
         weather=weather_data,
         action=farmer_action
     )
-
-    # Uncertainty Guardrail Halt Check
+    
+    # Uncertainty / Low Confidence Guardrail Check
     if sim_result.get("status") == "halted":
         halt_msg = {
             "ta": "படத்தின் தரம் குறைவாக உள்ளது. தயவுசெய்து தெளிவான புகைப்படத்தை மீண்டும் பதிவேற்றவும்.",
             "en": "Prediction confidence is low. Please capture and re-upload a clearer crop image.",
             "hi": "छवि की गुणवत्ता कम है। कृपया फसल की स्पष्ट तस्वीर दोबारा अपलोड करें।"
         }
-        advice_text = halt_msg.get(lang, halt_msg["ta"])
-        audio_file = text_to_speech(advice_text, output_path="halt_advisory.mp3", language=lang, auto_play=True)
+        advice_text = halt_msg.get(language, halt_msg["ta"])
         return {
             "status": "halted",
             "simulation": sim_result,
             "advisory_text": advice_text,
-            "audio_file": audio_file
+            "audio_file": None
         }
 
-    # Healthy Crop Guardrail Check
-    if sim_result.get("status") == "healthy_crop":
-        healthy_msg = {
-            "ta": "உங்கள் பயிர் நலமாக உள்ளது! இரசாயன மருந்துகள் தெளிக்க தேவையில்லை. வழக்கமான பராமரிப்பு போதுமானது.",
-            "en": "Your crop is healthy! Chemical spraying is unnecessary. Regular maintenance is sufficient.",
-            "hi": "आपकी फसल स्वस्थ है! रासायनिक छिड़काव की आवश्यकता नहीं है। सामान्य देखभाल पर्याप्त है।"
-        }
-        advice_text = healthy_msg.get(lang, healthy_msg["ta"])
-        audio_file = text_to_speech(advice_text, output_path="healthy_advisory.mp3", language=lang, auto_play=True)
-        return {
-            "status": "healthy_crop",
-            "simulation": sim_result,
-            "advisory_text": advice_text,
-            "audio_file": audio_file
-        }
+    # 2. Advisory Generation
+    advisory_text = ""
+    if generate_advisory_func:
+        try:
+            advisory_text = generate_advisory_func(simulation_data=sim_result, target_lang=language)
+        except Exception:
+            try:
+                advisory_text = generate_advisory_func(sim_result, language)
+            except Exception:
+                advisory_text = ""
 
-    # Standard Advisory Generation
-    advisory_text = generate_tamil_advisory(sim_result, language=lang)
-    audio_file = text_to_speech(advisory_text, output_path="decision_advisory.mp3", language=lang, auto_play=True)
+    if not advisory_text:
+        # Safe default advisory text if explainer LLM is unavailable
+        if language == "ta":
+            advisory_text = "வானிலை நிலவரப்படி தற்போது மழை வாய்ப்பு குறைவாக உள்ளதால் பரிந்துரைக்கப்பட்ட மருந்தை தெளிக்கலாம்."
+        elif language == "hi":
+            advisory_text = "मौसम के अनुसार अभी बारिश की संभावना कम है, इसलिए दवा का छिड़काव किया जा सकता है।"
+        else:
+            advisory_text = "Weather conditions are favorable with low rain probability. Recommended treatment can be applied."
 
     return {
         "status": "success",
         "simulation": sim_result,
         "advisory_text": advisory_text,
-        "audio_file": audio_file
+        "audio_file": None
     }

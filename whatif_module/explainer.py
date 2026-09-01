@@ -59,13 +59,22 @@ Simulation Data:
 Provide only the 2 actionable bullet points without any introductory or markdown heading text.
 """
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+          model="gemini-3.6-flash",
             contents=prompt,
         )
         if response and response.text:
             return response.text.strip()
-        return FALLBACK_MESSAGES[lang]
-
     except Exception as e:
-        print(f"[Warning] Gemini API failed: {e}. Switching to offline fallback.")
-        return FALLBACK_MESSAGES[lang]
+        print(f"[Notice] Gemini call switched to rule-based fallback: {e}")
+
+    # Smart agronomy fallback based on simulation inputs
+    crop = sim_result.get('crop', 'பயிர்')
+    disease = sim_result.get('disease', 'நோய்')
+    action = sim_result.get('action', 'பரிந்துரைக்கப்பட்ட நடவடிக்கை')
+    
+    if lang == "ta":
+        return f"1. {crop} பயிரில் {disease} பாதிப்பு கண்டறியப்பட்டுள்ளது. உடனடியாக உரிய பூஞ்சாண தடுப்பு மருந்தை தெளிக்கவும்.\n2. தற்போதைய வானிலை சூழலைக் கவனித்து {action} மேற்கொள்வது மகசூல் இழப்பை தடுக்கும்."
+    elif lang == "hi":
+        return f"1. {crop} फसल में {disease} के लक्षण हैं, तुरंत अनुशंसित कीटनाशक का छिड़काव करें।\n2. मौसम की स्थिति को ध्यान में रखकर ही उचित कदम उठाएं।"
+    else:
+        return f"1. {disease} detected in {crop}. Apply targeted agronomic treatment promptly.\n2. Monitor current weather conditions carefully before {action}."
