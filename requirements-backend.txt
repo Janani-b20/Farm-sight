@@ -3,3 +3,4 @@ uvicorn==0.52.4
 python-multipart==0.0.32
 python-dotenv
 requests
+google-genai
