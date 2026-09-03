@@ -44,6 +44,7 @@ def analyze_prediction(data: MLPredictionInput):
             disease=data.disease,
             confidence=data.confidence,
             weather_context=data.weather_context,
+            language=data.language,
         )
 
         return AnalysisResponse(

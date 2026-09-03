@@ -3,15 +3,12 @@ from typing import Optional
 
 
 class MLPredictionInput(BaseModel):
-    """
-    Standardized contract coming from the .keras model inference layer.
-    Example: {"crop": "paddy", "disease": "dead_heart", "confidence": 99.69, "message": "Prediction successful."}
-    """
     crop: str
     disease: str
-    confidence: float = Field(..., ge=0, le=100, description="Model confidence as a percentage 0-100")
+    confidence: float
     message: str = ""
-    weather_context: Optional[str] = None
+    weather_context: str = ""
+    language: str = "en"
 
 
 class SourceItem(BaseModel):
