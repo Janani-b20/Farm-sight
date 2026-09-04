@@ -1,26 +1,26 @@
 import os
+import time
 from datetime import datetime
 
 import requests
 
+_WEATHER_CACHE = {}
+_WEATHER_CACHE_TTL = 300  # 5 minutes
+
 
 def get_weather_data(lat: float = 10.7905, lon: float = 78.7047):
     """
-    Fetch live weather data.
-
-    Primary:
-        Open-Meteo
-
-    Fallback:
-        OpenWeatherMap
-
-    Rain probability is kept between 0 and 100.
-    No fabricated weather values are returned if both services fail.
+    Fetch live weather data with 5-minute in-memory caching.
     """
-
-    # ---------------------------------------------------------
-    # 1. Open-Meteo - Primary
-    # ---------------------------------------------------------
+    try:
+        cache_key = (round(float(lat), 3), round(float(lon), 3))
+        now = time.time()
+        if cache_key in _WEATHER_CACHE:
+            cached_data, timestamp = _WEATHER_CACHE[cache_key]
+            if now - timestamp < _WEATHER_CACHE_TTL:
+                return cached_data
+    except Exception:
+        cache_key = None
 
     open_meteo_url = (
         "https://api.open-meteo.com/v1/forecast"
@@ -71,7 +71,7 @@ def get_weather_data(lat: float = 10.7905, lon: float = 78.7047):
         if rain_prob is not None:
             rain_prob = max(0, min(100, round(float(rain_prob))))
 
-        return {
+        res = {
             "temp": round(current.get("temperature_2m", 0)),
             "humidity": round(
                 current.get("relative_humidity_2m", 0)
@@ -84,6 +84,9 @@ def get_weather_data(lat: float = 10.7905, lon: float = 78.7047):
             "weather_source": "open_meteo",
             "weather_status": "live",
         }
+        if cache_key:
+            _WEATHER_CACHE[cache_key] = (res, time.time())
+        return res
 
     except Exception as e:
         print(

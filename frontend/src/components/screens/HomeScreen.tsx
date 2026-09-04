@@ -4,6 +4,9 @@ import { useApp } from '../../context/AppContext';
 import { translations, getLocalizedDisplay } from '../../i18n/translations';
 import { WeatherResponse } from '../../services/weatherApi';
 import { MarketAnalysisResponse } from '../../services/marketApi';
+import { GovernmentSupportCard } from '../GovernmentSupportCard';
+import { ActionPlanCard } from '../ActionPlanCard';
+import { SchemeItem } from '../../services/schemeApi';
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -24,6 +27,7 @@ export const HomeScreen: React.FC = () => {
 
   const [marketData, setMarketData] = useState<MarketAnalysisResponse | null>(null);
   const [marketLoading, setMarketLoading] = useState<boolean>(true);
+  const [topScheme, setTopScheme] = useState<SchemeItem | null>(null);
 
   // Fetch real Weather data using shared location coordinates & 5-min cache
   useEffect(() => {
@@ -269,6 +273,19 @@ export const HomeScreen: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Government Support */}
+      <GovernmentSupportCard
+        riskTags={['crop_loss', 'weather_risk']}
+        onTopSchemeLoaded={setTopScheme}
+      />
+
+      {/* Action Plan */}
+      <ActionPlanCard
+        weatherData={weatherData}
+        marketData={marketData}
+        topScheme={topScheme}
+      />
     </div>
   );
 };

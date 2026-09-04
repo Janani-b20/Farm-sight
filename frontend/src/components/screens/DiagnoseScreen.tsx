@@ -16,6 +16,7 @@ import { VoiceButton } from '../VoiceButton';
 import { CropId } from '../../types';
 import { getDiseaseName } from '../../i18n/diseaseNames';
 import { CROP_OPTIONS } from '../../data/mockData';
+import { CameraModal } from '../CameraModal';
 
 export const DiagnoseScreen: React.FC = () => {
   const {
@@ -33,6 +34,7 @@ export const DiagnoseScreen: React.FC = () => {
   diagnosisState.result?.disease,
   language
 );
+  const [isCameraModalOpen, setIsCameraModalOpen] = React.useState<boolean>(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,7 +79,7 @@ export const DiagnoseScreen: React.FC = () => {
   };
 
   const handleCameraClick = () => {
-    cameraInputRef.current?.click();
+    setIsCameraModalOpen(true);
   };
 
   const handleGalleryClick = () => {
@@ -564,6 +566,16 @@ export const DiagnoseScreen: React.FC = () => {
             )}
           </div>
         )}
+
+      {/* Real In-App Live Camera Modal */}
+      <CameraModal
+        language={language}
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onCapture={(file, previewUrl) => {
+          triggerDiagnosis(selectedCrop, file, previewUrl);
+        }}
+      />
     </div>
   );
 };

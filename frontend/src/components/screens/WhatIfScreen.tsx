@@ -28,6 +28,10 @@ import {
   VoiceButton,
 } from '../VoiceButton';
 
+import { GovernmentSupportCard } from '../GovernmentSupportCard';
+import { ActionPlanCard } from '../ActionPlanCard';
+import { SchemeItem } from '../../services/schemeApi';
+
 
 interface Option {
   id: string;
@@ -35,6 +39,7 @@ interface Option {
   label: string;
 }
 
+const whatifGlobalCache = new Map<string, { map: Record<string, WhatIfResponse>; bestId: string | null; timestamp: number }>();
 
 export const WhatIfScreen: React.FC = () => {
   const {
@@ -50,6 +55,7 @@ export const WhatIfScreen: React.FC = () => {
 
   const [scenariosMap, setScenariosMap] = useState<Record<string, WhatIfResponse>>({});
   const [bestOptionId, setBestOptionId] = useState<string | null>(null);
+  const [topScheme, setTopScheme] = useState<SchemeItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,36 +89,45 @@ export const WhatIfScreen: React.FC = () => {
       return;
     }
 
+    const cacheKey = `${selectedCrop}_${diagnosis.disease}_${(location.latitude || 0).toFixed(2)}_${(location.longitude || 0).toFixed(2)}_${language}`;
+    const cached = whatifGlobalCache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && (now - cached.timestamp < 300000)) {
+      setScenariosMap(cached.map);
+      setBestOptionId(cached.bestId);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    try {
-      const requests = options.map((opt) =>
-        runWhatIf({
-          crop: selectedCrop,
-          disease: diagnosis.disease || '',
-          confidence: diagnosis.confidence ?? 90,
-          state: location.state || 'Tamil Nadu',
-          district: location.district || 'Madurai',
-          latitude: location.latitude,
-          longitude: location.longitude,
-          farmer_action: opt.action,
-          language: language,
-        }).then((res) => ({ id: opt.id, res }))
-      );
+    const primaryOpt = options.find((o) => o.id === whatIfOption) || options[0];
 
-      const resultsList = await Promise.all(requests);
-      const newMap: Record<string, WhatIfResponse> = {};
-      resultsList.forEach(({ id, res }) => {
-        newMap[id] = res;
+    try {
+      // Step 1: Fetch primary scenario FIRST for instant initial display
+      const primaryRes = await runWhatIf({
+        crop: selectedCrop,
+        disease: diagnosis.disease || '',
+        confidence: diagnosis.confidence ?? 90,
+        state: location.state || 'Tamil Nadu',
+        district: location.district || 'Madurai',
+        latitude: location.latitude,
+        longitude: location.longitude,
+        farmer_action: primaryOpt.action,
+        language: language,
       });
 
-      setScenariosMap(newMap);
+      const initialMap: Record<string, WhatIfResponse> = {
+        [primaryOpt.id]: primaryRes,
+      };
 
-      // Determine bestOptionId independently of selected tab
-      const firstRes = resultsList[0]?.res;
-      const sim = firstRes?.whatif?.simulation;
-      const weatherData = sim?.weather_conditions || firstRes?.weather;
+      setScenariosMap(initialMap);
+
+      // Determine initial best option from primary weather response
+      const sim = primaryRes?.whatif?.simulation;
+      const weatherData = sim?.weather_conditions || primaryRes?.weather;
       const rain = weatherData?.rain_prob ?? (weatherData as any)?.rain_probability ?? null;
 
       let determinedBest: string | null = null;
@@ -129,6 +144,33 @@ export const WhatIfScreen: React.FC = () => {
       }
 
       setBestOptionId(determinedBest);
+      setLoading(false);
+
+      // Step 2: Background prefetch remaining scenarios silently
+      const remainingOpts = options.filter((o) => o.id !== primaryOpt.id);
+      const bgRequests = remainingOpts.map((opt) =>
+        runWhatIf({
+          crop: selectedCrop,
+          disease: diagnosis.disease || '',
+          confidence: diagnosis.confidence ?? 90,
+          state: location.state || 'Tamil Nadu',
+          district: location.district || 'Madurai',
+          latitude: location.latitude,
+          longitude: location.longitude,
+          farmer_action: opt.action,
+          language: language,
+        }).then((res) => ({ id: opt.id, res }))
+      );
+
+      const bgResults = await Promise.all(bgRequests);
+      setScenariosMap((prevMap) => {
+        const fullMap = { ...prevMap };
+        bgResults.forEach(({ id, res }) => {
+          fullMap[id] = res;
+        });
+        whatifGlobalCache.set(cacheKey, { map: fullMap, bestId: determinedBest, timestamp: Date.now() });
+        return fullMap;
+      });
     } catch (err) {
       console.error('What-If API error:', err);
       setError(
@@ -138,7 +180,6 @@ export const WhatIfScreen: React.FC = () => {
           ? 'What-If परिणाम तैयार नहीं हो सका। कृपया फिर कोशिश करें।'
           : 'Could not generate the What-If result. Please try again.'
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -519,6 +560,24 @@ export const WhatIfScreen: React.FC = () => {
         </div>
 
       )}
+
+      {/* Government Support & Action Plan Flow */}
+      <div className="space-y-6 pt-2">
+        <GovernmentSupportCard
+          riskTags={['crop_loss', 'weather_risk']}
+          onTopSchemeLoaded={setTopScheme}
+        />
+
+        <ActionPlanCard
+          bestOptionLabel={
+            bestOptionId
+              ? options.find((o) => o.id === bestOptionId)?.label
+              : options.find((o) => o.id === whatIfOption)?.label
+          }
+          weatherData={weather}
+          topScheme={topScheme}
+        />
+      </div>
 
     </div>
 

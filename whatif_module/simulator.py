@@ -2,6 +2,27 @@
 FarmSight - Deterministic Agro-Climatic What-If Simulation Engine
 """
 
+ACTION_ALIASES = {
+    "wait_weather": "wait_for_better_weather",
+    "wait_for_better_weather": "wait_for_better_weather",
+    "wait": "wait_for_better_weather",
+    "delay": "wait_for_better_weather",
+
+    "treat_now": "spray_chemical_now",
+    "spray_immediately": "spray_chemical_now",
+    "spray_chemical_now": "spray_chemical_now",
+    "spray": "spray_chemical_now",
+    "chemical": "spray_chemical_now",
+
+    "use_bio_control": "bio_control",
+    "bio_control": "bio_control",
+    "bio": "bio_control",
+
+    "monitor": "monitor_first",
+    "monitor_first": "monitor_first",
+    "observe": "monitor_first",
+}
+
 
 def simulate_decision(
     ml_prediction: dict,
@@ -11,10 +32,6 @@ def simulate_decision(
     """
     Simulates estimated outcomes for a farmer action using
     disease status and available weather context.
-
-    The ML layer is responsible for deciding whether a
-    prediction is uncertain. This simulator does not apply
-    another confidence threshold.
     """
 
     crop = str(ml_prediction.get("crop", "unknown")).lower()
@@ -32,8 +49,7 @@ def simulate_decision(
     except (TypeError, ValueError):
         rain_prob = None
 
-    # Guardrail 1:
-    # Trust the disease ML pipeline's explicit uncertainty result.
+    # Guardrail 1: Trust ML uncertainty decision.
     if disease in {"uncertain", "low_confidence"}:
         return {
             "status": "halted",
@@ -47,8 +63,7 @@ def simulate_decision(
             "show_whatif": False
         }
 
-    # Guardrail 2:
-    # Healthy crops should not receive unnecessary treatment simulation.
+    # Guardrail 2: Healthy crops should not receive treatment simulation.
     if disease in {"normal", "healthy", "no_disease", "none"}:
         return {
             "status": "healthy_crop",
@@ -62,18 +77,21 @@ def simulate_decision(
             "show_whatif": False
         }
 
-    # Disease was detected, so What-If is available.
-    action_lower = str(action).lower()
+    # Normalize action ID before scenario branching
+    raw_action = str(action).strip().lower()
+    canonical_action = ACTION_ALIASES.get(raw_action, raw_action)
 
-    # Action-specific simulation branches
-    if "wait" in action_lower or "delay" in action_lower:
+    # -------------------------------------------------------------
+    # 1. WAIT FOR BETTER WEATHER
+    # -------------------------------------------------------------
+    if canonical_action == "wait_for_better_weather":
         is_rainy = rain_prob is not None and rain_prob >= 60
         return {
             "status": "simulated",
             "crop": crop,
             "disease": disease,
             "confidence": confidence,
-            "action": action,
+            "action": canonical_action,
             "weather_conditions": weather,
             "simulation_outcome": (
                 "Delaying chemical application avoids treatment wash-off during rain, "
@@ -83,21 +101,24 @@ def simulate_decision(
             "recommendation": (
                 "Delay treatment until rain subsides; re-evaluate crop health under clear weather."
             ),
-            "yield_protection": "75% - 85%",
+            "yield_protection": "75% - 85% (Estimated)",
             "cost_impact": "Low Initial Cost (₹0 now)",
             "estimate_notice": (
-                "This is a decision-support estimate based on current weather context."
+                "This is an estimated scenario based on weather context, not a guaranteed outcome."
             ),
             "show_whatif": True
         }
 
-    if "bio" in action_lower:
+    # -------------------------------------------------------------
+    # 2. BIO-CONTROL
+    # -------------------------------------------------------------
+    if canonical_action == "bio_control":
         return {
             "status": "simulated",
             "crop": crop,
             "disease": disease,
             "confidence": confidence,
-            "action": action,
+            "action": canonical_action,
             "weather_conditions": weather,
             "simulation_outcome": (
                 "Biological intervention (botanical extracts or bio-fungicides like Neem oil / Trichoderma) "
@@ -107,21 +128,24 @@ def simulate_decision(
             "recommendation": (
                 "Apply bio-control agent during cool morning or evening hours for optimal biological activity."
             ),
-            "yield_protection": "80% - 88%",
+            "yield_protection": "80% - 88% (Estimated)",
             "cost_impact": "Moderate Cost (₹400 - ₹800)",
             "estimate_notice": (
-                "This is a decision-support estimate based on biological control rules."
+                "This is an estimated scenario based on biological control rules."
             ),
             "show_whatif": True
         }
 
-    if "monitor" in action_lower or "observe" in action_lower:
+    # -------------------------------------------------------------
+    # 3. MONITOR FIRST
+    # -------------------------------------------------------------
+    if canonical_action == "monitor_first":
         return {
             "status": "simulated",
             "crop": crop,
             "disease": disease,
             "confidence": confidence,
-            "action": action,
+            "action": canonical_action,
             "weather_conditions": weather,
             "simulation_outcome": (
                 "Daily field monitoring tracks disease progression for 3–5 days "
@@ -131,56 +155,82 @@ def simulate_decision(
             "recommendation": (
                 "Observe leaf symptoms daily. Prepare treatment if disease severity increases beyond 5% of canopy."
             ),
-            "yield_protection": "60% - 75%",
-            "cost_impact": "Zero Cost (₹0)",
+            "yield_protection": "60% - 75% (Estimated)",
+            "cost_impact": "Zero Immediate Cost (₹0)",
             "estimate_notice": (
-                "This is a decision-support estimate for monitoring workflows."
+                "This is an estimated scenario for monitoring workflows."
             ),
             "show_whatif": True
         }
 
-    # Default / Spray-related action
-    if rain_prob is None:
+    # -------------------------------------------------------------
+    # 4. SPRAY CHEMICAL NOW (TREAT NOW)
+    # -------------------------------------------------------------
+    if canonical_action == "spray_chemical_now":
+        if rain_prob is None:
+            return {
+                "status": "simulated",
+                "crop": crop,
+                "disease": disease,
+                "confidence": confidence,
+                "action": canonical_action,
+                "weather_conditions": weather,
+                "simulation_outcome": (
+                    "Rainfall probability is unavailable, so spray timing "
+                    "cannot be evaluated reliably."
+                ),
+                "risk_level": "Weather Data Unavailable",
+                "recommendation": (
+                    "Check current weather conditions before applying chemical treatment."
+                ),
+                "yield_protection": "85% - 90% (Estimated)",
+                "cost_impact": "Higher Initial Cost (₹800 - ₹1500)",
+                "estimate_notice": (
+                    "This is an estimated scenario based on available weather context."
+                ),
+                "show_whatif": True
+            }
+
+        if rain_prob >= 70:
+            return {
+                "status": "simulated",
+                "crop": crop,
+                "disease": disease,
+                "confidence": confidence,
+                "action": canonical_action,
+                "weather_conditions": weather,
+                "simulation_outcome": (
+                    "High rainfall probability (>70%) increases chemical wash-off "
+                    "and runoff risk, significantly reducing treatment efficacy."
+                ),
+                "risk_level": "High Weather-Related Risk",
+                "recommendation": (
+                    "Consider delaying spraying until rainfall risk reduces below 60%."
+                ),
+                "yield_protection": "60% - 70% (Estimated due to wash-off)",
+                "cost_impact": "Higher Initial Cost (₹800 - ₹1500)",
+                "estimate_notice": (
+                    "This is an estimated scenario based on available weather context."
+                ),
+                "show_whatif": True
+            }
+
         return {
             "status": "simulated",
             "crop": crop,
             "disease": disease,
             "confidence": confidence,
-            "action": action,
+            "action": canonical_action,
             "weather_conditions": weather,
             "simulation_outcome": (
-                "Rainfall probability is unavailable, so spray timing "
-                "cannot be evaluated reliably."
+                "Immediate targeted chemical application halts active pathogen spread "
+                "with high control efficiency under suitable weather conditions."
             ),
-            "risk_level": "Weather Data Unavailable",
+            "risk_level": "Lower Weather-Related Risk",
             "recommendation": (
-                "Check current weather conditions before applying chemical treatment."
+                "Apply recommended chemical treatment promptly under dry weather conditions."
             ),
-            "yield_protection": "85% - 90%",
-            "cost_impact": "Higher Initial Cost (₹800 - ₹1500)",
-            "estimate_notice": (
-                "This is a decision-support estimate, not a guaranteed agronomic outcome."
-            ),
-            "show_whatif": True
-        }
-
-    if rain_prob >= 70:
-        return {
-            "status": "simulated",
-            "crop": crop,
-            "disease": disease,
-            "confidence": confidence,
-            "action": action,
-            "weather_conditions": weather,
-            "simulation_outcome": (
-                "High rainfall probability (>70%) increases chemical wash-off "
-                "and runoff risk, significantly reducing treatment efficacy."
-            ),
-            "risk_level": "High Weather-Related Risk",
-            "recommendation": (
-                "Consider delaying spraying until rainfall risk reduces below 60%."
-            ),
-            "yield_protection": "60% - 70% (due to wash-off)",
+            "yield_protection": "90% - 95% (Estimated)",
             "cost_impact": "Higher Initial Cost (₹800 - ₹1500)",
             "estimate_notice": (
                 "This is an estimated scenario based on available weather context."
@@ -188,25 +238,25 @@ def simulate_decision(
             "show_whatif": True
         }
 
+    # Truly unknown action fallback
     return {
         "status": "simulated",
         "crop": crop,
         "disease": disease,
         "confidence": confidence,
-        "action": action,
+        "action": canonical_action,
         "weather_conditions": weather,
         "simulation_outcome": (
-            "Immediate targeted chemical application halts active pathogen spread "
-            "with high control efficiency under suitable weather conditions."
+            f"The action '{action}' was evaluated. Continue monitoring the crop and follow general agricultural advice."
         ),
-        "risk_level": "Lower Weather-Related Risk",
+        "risk_level": "Standard Monitoring Risk",
         "recommendation": (
-            "Apply recommended chemical treatment promptly under dry weather conditions."
+            "Monitor crop symptoms and consult local extension officers."
         ),
-        "yield_protection": "90% - 95%",
-        "cost_impact": "Higher Initial Cost (₹800 - ₹1500)",
+        "yield_protection": "70% - 80% (Estimated)",
+        "cost_impact": "Variable Cost",
         "estimate_notice": (
-            "This is an estimated scenario based on available weather context."
+            "This is a general decision-support estimate for an unmapped action."
         ),
         "show_whatif": True
     }

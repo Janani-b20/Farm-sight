@@ -329,6 +329,29 @@ export const translations = {
 
     weatherRiskTag:
       'Weather Risk',
+
+    // GOVERNMENT SUPPORT & ACTION PLAN
+    governmentSupportTitle: 'Government Support',
+    yourActionPlanTitle: 'Your Action Plan',
+    bestDecision: 'Best Decision',
+    weatherCheck: 'Weather Check',
+    marketDecision: 'Market Decision',
+    governmentSupport: 'Government Support',
+    eligibility: 'Eligibility',
+    requiredDocuments: 'Required Documents',
+    whyRecommended: 'Why Recommended',
+    checkOfficialPortal: 'Check Official Portal',
+    hideDetails: 'Hide Details',
+    immediateAction: 'Immediate Action',
+    diseaseStatus: 'Disease Status',
+
+    // CAMERA & ACTION PLAN FALLBACK
+    actionPlanFallbackCTA: 'Diagnose your crop to generate a personalized action plan.',
+    cameraPermissionDeniedMsg: 'Camera permission was denied. You can upload a photo instead.',
+    cameraUnavailableMsg: 'Camera is unavailable on this device. You can upload a photo instead.',
+    takePhoto: 'Take Photo',
+    initializingCamera: 'Starting camera...',
+    cancel: 'Cancel',
   },
 
   // =========================================================
@@ -731,6 +754,29 @@ export const translations = {
 
     weatherRiskTag:
       'வானிலை அபாயம்',
+
+    // GOVERNMENT SUPPORT & ACTION PLAN
+    governmentSupportTitle: 'அரசு நலத்திட்ட உதவிகள்',
+    yourActionPlanTitle: 'உங்கள் செயல் திட்டம்',
+    bestDecision: 'சிறந்த முடிவு',
+    weatherCheck: 'வானிலை சரிபார்ப்பு',
+    marketDecision: 'சந்தை முடிவு',
+    governmentSupport: 'அரசு நலத்திட்டங்கள்',
+    eligibility: 'தகுதி',
+    requiredDocuments: 'தேவையான ஆவணங்கள்',
+    whyRecommended: 'பரிந்துரைக்கப்பட காரணம்',
+    checkOfficialPortal: 'அரசு இணையதளத்தைப் பார்க்கவும்',
+    hideDetails: 'விவரங்களை மறை',
+    immediateAction: 'உடனடி நடவடிக்கை',
+    diseaseStatus: 'நோய் நிலை',
+
+    // CAMERA & ACTION PLAN FALLBACK
+    actionPlanFallbackCTA: 'உங்கள் பயிருக்கான தனிப்பயனாக்கப்பட்ட செயல் திட்டத்தைப் பெற நோய் ஆய்வு செய்யவும்.',
+    cameraPermissionDeniedMsg: 'கேமரா அனுமதி மறுக்கப்பட்டது. பதிலாக புகைப்படத்தை பதிவேற்றலாம்.',
+    cameraUnavailableMsg: 'இந்த சாதனத்தில் கேமரா கிடைக்கவில்லை. பதிலாக புகைப்படத்தை பதிவேற்றலாம்.',
+    takePhoto: 'படம் எடு',
+    initializingCamera: 'கேமரா தொடங்குகிறது...',
+    cancel: 'ரத்து',
   },
 
   // =========================================================
@@ -1135,6 +1181,29 @@ export const translations = {
 
     weatherRiskTag:
       'मौसम जोखिम',
+
+    // GOVERNMENT SUPPORT & ACTION PLAN
+    governmentSupportTitle: 'सरकारी सहायता',
+    yourActionPlanTitle: 'आपकी कार्य योजना',
+    bestDecision: 'सर्वश्रेष्ठ निर्णय',
+    weatherCheck: 'मौसम जांच',
+    marketDecision: 'बाजार का निर्णय',
+    governmentSupport: 'सरकारी योजनाएं',
+    eligibility: 'पात्रता',
+    requiredDocuments: 'आवश्यक दस्तावेज',
+    whyRecommended: 'क्यों अनुशंसित',
+    checkOfficialPortal: 'आधिकारिक पोर्टल देखें',
+    hideDetails: 'विवरण छिपाएं',
+    immediateAction: 'तत्काल कार्रवाई',
+    diseaseStatus: 'रोग की स्थिति',
+
+    // CAMERA & ACTION PLAN FALLBACK
+    actionPlanFallbackCTA: 'अपनी फसल की जांच करें और व्यक्तिगत कार्य योजना प्राप्त करें।',
+    cameraPermissionDeniedMsg: 'कैमरा अनुमति अस्वीकृत कर दी गई। आप इसके बजाय फोटो अपलोड कर सकते हैं।',
+    cameraUnavailableMsg: 'इस डिवाइस पर कैमरा उपलब्ध नहीं है। आप इसके बजाय फोटो अपलोड कर सकते हैं।',
+    takePhoto: 'फोटो लें',
+    initializingCamera: 'कैमरा शुरू हो रहा है...',
+    cancel: 'रद्द करें',
   },
 } as const;
 
