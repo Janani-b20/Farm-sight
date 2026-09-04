@@ -23,8 +23,8 @@ export const DiagnoseScreen: React.FC = () => {
     selectedCrop,
     setSelectedCrop,
     diagnosisState,
-    setDiagnosisState,
     triggerDiagnosis,
+    resetDiagnosis,
     setActiveTab,
   } = useApp();
 
@@ -85,12 +85,7 @@ export const DiagnoseScreen: React.FC = () => {
   };
 
   const handleRetake = () => {
-    setDiagnosisState({
-      step: 'select_crop',
-      imageUri: null,
-      resultType: 'disease',
-      result: null,
-    });
+    resetDiagnosis();
   };
 
   const handleNavigateWhatIf = () => {

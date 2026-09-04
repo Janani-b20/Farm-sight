@@ -1,11 +1,11 @@
 import React from 'react';
-import { Sprout, MapPin, Globe, Home, Stethoscope, CloudSun, TrendingUp, HelpCircle, User } from 'lucide-react';
+import { Sprout, MapPin, Globe, Home, Stethoscope, CloudSun, TrendingUp, HelpCircle, User, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { translations, getLocalizedDisplay } from '../i18n/translations';
 import { Language, ActiveTab } from '../types';
 
 export const Header: React.FC = () => {
-  const { language, setLanguage, userLocation, activeTab, setActiveTab } = useApp();
+  const { language, setLanguage, userLocation, activeTab, setActiveTab, location, requestLocation } = useApp();
   const t = translations[language];
 
   const languages: { id: Language; label: string; native: string }[] = [
@@ -24,6 +24,7 @@ export const Header: React.FC = () => {
   ];
 
   const localizedLocation = getLocalizedDisplay(userLocation, language);
+  const isFallback = location.locationStatus === 'fallback' || location.locationStatus === 'denied';
 
   return (
     <header className="sticky top-0 z-30 bg-[#F7F7F0]/95 backdrop-blur-md border-b border-sage-200 px-4 md:px-8 py-3 shadow-xs">
@@ -46,7 +47,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Navigation Links (hidden on mobile, visible on md and up) */}
+        {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-1.5 bg-white/80 p-1.5 rounded-full border border-sage-200 shadow-xs">
           {desktopNavItems.map((item) => {
             const Icon = item.icon;
@@ -72,9 +73,23 @@ export const Header: React.FC = () => {
         {/* Header Right Actions */}
         <div className="flex items-center gap-2.5 shrink-0">
           {/* Location Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sage-100 text-[#1D2A20] text-xs font-semibold border border-sage-200">
-            <MapPin className="w-3.5 h-3.5 text-[#2F5436]" />
-            <span className="truncate max-w-[130px] md:max-w-[200px]">{localizedLocation}</span>
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sage-100 text-[#1D2A20] text-xs font-semibold border border-sage-200 relative group"
+            title={isFallback ? t.usingDefaultLocation : localizedLocation}
+          >
+            <MapPin className={`w-3.5 h-3.5 ${isFallback ? 'text-amber-600' : 'text-[#2F5436]'}`} />
+            <span className="truncate max-w-[120px] md:max-w-[180px]">{localizedLocation}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                requestLocation();
+              }}
+              type="button"
+              className="p-0.5 rounded-full hover:bg-sage-200 text-[#416A47] transition-colors"
+              title={t.useMyLocation}
+            >
+              <RefreshCw className={`w-3 h-3 ${location.locationStatus === 'loading' ? 'animate-spin' : ''}`} />
+            </button>
           </div>
 
           {/* Language Switcher Pills */}

@@ -36,6 +36,20 @@ export const translations = {
     todayInsightTitle: "Today's Insight",
     viewDetails: 'View Details',
 
+    recentSampleDataBadge: 'Recent Sample Data',
+    weatherUnavailable: 'Weather temporarily unavailable',
+    usingDefaultLocation: 'Using default location',
+    useMyLocation: 'Use My Location',
+    transportUnavailable: 'Transport estimate unavailable',
+    approxDistance: 'Approx. Distance',
+    estimatedTransportCost: 'Estimated Transport Cost',
+    estimatedGrossValue: 'Estimated Gross Value',
+    estimatedNetReturn: 'Estimated Net Return',
+    insightHighRain: 'Rain is likely. Consider delaying spraying.',
+    insightHighWind: 'Strong wind may increase spray drift risk.',
+    insightHighHumidity: 'High humidity may increase disease-favourable conditions.',
+    insightSuitable: 'Weather conditions may be suitable for field activity.',
+
     // =====================================================
     // CROPS
     // =====================================================
@@ -194,6 +208,19 @@ export const translations = {
     netProfitNotice:
       'Net value is calculated after subtracting transport cost from gross market revenue.',
 
+    minPrice: 'Min Price',
+    maxPrice: 'Max Price',
+    modalPrice: 'Modal Price',
+    arrivalDate: 'Arrival Date',
+    variety: 'Variety',
+    dataSource: 'Data Source',
+    fallbackDataBadge: 'Fallback / Recent Sample Data',
+    liveMarketData: 'Live Market Data',
+    loadingMarketData: 'Fetching market data...',
+    errorMarketData: 'Unable to load market data.',
+    emptyMarketData: 'No market records found for this crop & location.',
+    retryButton: 'Retry',
+
     // =====================================================
     // RISK / STATUS
     // =====================================================
@@ -349,6 +376,20 @@ export const translations = {
 
     viewDetails:
       'விவரங்களை காண்க',
+
+    recentSampleDataBadge: 'சமீபத்திய மாதிரி தரவு',
+    weatherUnavailable: 'வானிலை தற்காலிகமாக கிடைக்கவில்லை',
+    usingDefaultLocation: 'இயல்புநிலை இருப்பிடம் பயன்படுத்தப்படுகிறது',
+    useMyLocation: 'என் இருப்பிடத்தைப் பயன்படுத்து',
+    transportUnavailable: 'போக்குவரத்து மதிப்பீடு கிடைக்கவில்லை',
+    approxDistance: 'தோராயமான தூரம்',
+    estimatedTransportCost: 'மதிப்பிடப்பட்ட போக்குவரத்து செலவு',
+    estimatedGrossValue: 'மதிப்பிடப்பட்ட மொத்த வருவாய்',
+    estimatedNetReturn: 'மதிப்பிடப்பட்ட நிகர வருவாய்',
+    insightHighRain: 'மழை பெய்ய வாய்ப்புள்ளது. தெளிப்பதை ஒத்திவைக்கவும்.',
+    insightHighWind: 'பலத்த காற்று தெளிப்பு மருந்து சிதறும் அபாயத்தை அதிகரிக்கும்.',
+    insightHighHumidity: 'அதிக ஈரப்பதம் நோய் பரவுவதற்கு சாதகமான சூழலை உருவாக்கும்.',
+    insightSuitable: 'வயல் வேலைகளுக்கு வானிலை சாதகமாக இருக்கலாம்.',
 
     // CROPS
     cropSelectTitle:
@@ -541,6 +582,19 @@ export const translations = {
     netProfitNotice:
       'நிகர மதிப்பு என்பது மொத்த வருமானத்திலிருந்து போக்குவரத்து செலவைக் கழித்துக் கணக்கிடப்படுகிறது.',
 
+    minPrice: 'குறைந்தபட்ச விலை',
+    maxPrice: 'அதிகபட்ச விலை',
+    modalPrice: 'சராசரி விலை',
+    arrivalDate: 'வந்தடைந்த தேதி',
+    variety: 'ரகம்',
+    dataSource: 'தரவு ஆதாரம்',
+    fallbackDataBadge: 'மாதிரி / சமீபத்திய தரவு',
+    liveMarketData: 'நேரலை சந்தைத் தரவு',
+    loadingMarketData: 'சந்தைத் தரவு ஏற்றப்படுகிறது...',
+    errorMarketData: 'சந்தைத் தரவைப் பெற முடியவில்லை.',
+    emptyMarketData: 'இந்த பயிர் மற்றும் இடத்திற்கு சந்தைத் தரவு இல்லை.',
+    retryButton: 'மீண்டும் முயற்சி',
+
     // RISK
     low: 'குறைவு',
     medium: 'மிதமான',
@@ -720,6 +774,20 @@ export const translations = {
 
     viewDetails:
       'विवरण देखें',
+
+    recentSampleDataBadge: 'हाल का नमूना डेटा',
+    weatherUnavailable: 'मौसम अस्थायी रूप से उपलब्ध नहीं है',
+    usingDefaultLocation: 'डिफ़ॉल्ट स्थान का उपयोग किया जा रहा है',
+    useMyLocation: 'मेरे स्थान का उपयोग करें',
+    transportUnavailable: 'परिवहन अनुमान उपलब्ध नहीं है',
+    approxDistance: 'लगभग दूरी',
+    estimatedTransportCost: 'अनुमानित परिवहन लागत',
+    estimatedGrossValue: 'अनुमानित सकल मूल्य',
+    estimatedNetReturn: 'अनुमानित शुद्ध लाभ',
+    insightHighRain: 'बारिश की संभावना है। छिड़काव स्थगित करने पर विचार करें।',
+    insightHighWind: 'तेज हवा से छिड़काव के बहने का खतरा बढ़ सकता है।',
+    insightHighHumidity: 'उच्च आर्द्रता से रोग के अनुकूल स्थितियां बढ़ सकती हैं।',
+    insightSuitable: 'खेत के काम के लिए मौसम की स्थिति अनुकूल हो सकती है।',
 
     // CROPS
     cropSelectTitle:
@@ -912,6 +980,19 @@ export const translations = {
 
     netProfitNotice:
       'शुद्ध आय की गणना कुल मंडी आय में से परिवहन खर्च घटाकर की जाती है।',
+
+    minPrice: 'न्यूनतम मूल्य',
+    maxPrice: 'अधिकतम मूल्य',
+    modalPrice: 'मॉडल मूल्य',
+    arrivalDate: 'आवक तिथि',
+    variety: 'किस्म',
+    dataSource: 'डेटा स्रोत',
+    fallbackDataBadge: 'सैंपल / हालिया डेटा',
+    liveMarketData: 'लाइव मंडी भाव',
+    loadingMarketData: 'मंडी भाव लोड हो रहा है...',
+    errorMarketData: 'मंडी भाव प्राप्त नहीं हो सका।',
+    emptyMarketData: 'इस फसल और स्थान के लिए कोई मंडी भाव नहीं मिला।',
+    retryButton: 'पुनः प्रयास',
 
     // RISK
     low: 'कम',
@@ -1140,6 +1221,42 @@ export const GEOGRAPHIC_LOCALIZATION: Record<
     en: 'Tirunelveli',
     ta: 'திருநெல்வேலி',
     hi: 'तिरुनेलवेली',
+  },
+
+  Kumbakonam: {
+    en: 'Kumbakonam',
+    ta: 'கும்பகோணம்',
+    hi: 'कुंभकोणम',
+  },
+
+  Nagapattinam: {
+    en: 'Nagapattinam',
+    ta: 'நாகப்பட்டினம்',
+    hi: 'नागपट्टिनम',
+  },
+
+  Srirangam: {
+    en: 'Srirangam',
+    ta: 'ஸ்ரீரங்கம்',
+    hi: 'श्रीरंगम',
+  },
+
+  Trichy: {
+    en: 'Trichy',
+    ta: 'திருச்சி',
+    hi: 'तिरुचिरापल्ली',
+  },
+
+  Tiruvarur: {
+    en: 'Tiruvarur',
+    ta: 'திருவாரூர்',
+    hi: 'तिरुவாரूर',
+  },
+
+  'Current Location': {
+    en: 'Current Location',
+    ta: 'தற்போதைய இருப்பிடம்',
+    hi: 'वर्तमान स्थान',
   },
 
   Erode: {

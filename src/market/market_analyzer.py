@@ -280,4 +280,5 @@ class MarketAnalyzer:
             "estimated_transport_cost_rs": estimated_net_value.get("transport_cost_rs") if estimated_net_value else None,
             "net_value_rs": estimated_net_value.get("net_value_rs") if estimated_net_value else None,
             "net_value_calculation_basis": estimated_net_value.get("calculation_basis") if estimated_net_value else None,
+            "records": self.records,
         }

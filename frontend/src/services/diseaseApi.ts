@@ -110,3 +110,7 @@ export const analyzeDisease = async (
 
   return response.json();
 };
+
+export type PredictionResult = DiseasePredictionResponse;
+export type AnalysisResponse = DiseaseAnalysisResponse;
+export const analyzePrediction = analyzeDisease;

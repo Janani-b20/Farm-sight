@@ -108,15 +108,15 @@ export default function MarketSense({
         // 1. Fetch District-level / Nearby markets
         // 2. Fetch State-level markets across all major mandis
         const [distData, stateData] = await Promise.all([
-          fetchMarketAnalysis(commodity, activeState, activeDistrict.trim(), undefined, quantity, effectiveLat, effectiveLng),
-          fetchMarketAnalysis(commodity, activeState, undefined, undefined, quantity, effectiveLat, effectiveLng)
+          fetchMarketAnalysis(commodity, activeState, activeDistrict.trim(), undefined, Number(quantity), effectiveLat, effectiveLng),
+          fetchMarketAnalysis(commodity, activeState, undefined, undefined, Number(quantity), effectiveLat, effectiveLng)
         ]);
 
         setDistrictResult(distData);
         setAnalysisResult(stateData);
       } else {
         // Single Query
-        const data = await fetchMarketAnalysis(commodity, activeState, activeDistrict, market, quantity, effectiveLat, effectiveLng);
+        const data = await fetchMarketAnalysis(commodity, activeState, activeDistrict, market, Number(quantity), effectiveLat, effectiveLng);
         setAnalysisResult(data);
       }
       setShowResults(true);
@@ -147,7 +147,7 @@ export default function MarketSense({
           targetMarket.state,
           targetMarket.district,
           targetMarket.market,
-          quantity,
+          Number(quantity),
           effectiveLat,
           effectiveLng
         );
@@ -451,15 +451,15 @@ export default function MarketSense({
                 <div className="p-4 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm space-y-2">
                   <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Price Trend</span>
                   <div className="flex items-center gap-1.5">
-                    {(analysisResult?.price_trend.trend_direction || districtResult?.price_trend.trend_direction) === 'increasing' ? (
+                    {(analysisResult?.price_trend?.trend_direction || districtResult?.price_trend?.trend_direction) === 'increasing' ? (
                       <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-brand-500 text-xs font-semibold flex items-center gap-0.5">
                         <TrendingUp className="w-3.5 h-3.5" />
-                        +{(analysisResult?.price_trend.percentage_change ?? districtResult?.price_trend.percentage_change)}%
+                        +{(analysisResult?.price_trend?.percentage_change ?? districtResult?.price_trend?.percentage_change ?? 0)}%
                       </span>
-                    ) : (analysisResult?.price_trend.trend_direction || districtResult?.price_trend.trend_direction) === 'decreasing' ? (
+                    ) : (analysisResult?.price_trend?.trend_direction || districtResult?.price_trend?.trend_direction) === 'decreasing' ? (
                       <span className="px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-0.5">
                         <TrendingDown className="w-3.5 h-3.5" />
-                        {(analysisResult?.price_trend.percentage_change ?? districtResult?.price_trend.percentage_change)}%
+                        {(analysisResult?.price_trend?.percentage_change ?? districtResult?.price_trend?.percentage_change ?? 0)}%
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-semibold flex items-center gap-0.5">
@@ -596,7 +596,7 @@ export default function MarketSense({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                        {districtResult.market_comparison.map((item: MarketRecord, index: number) => {
+                        {districtResult.market_comparison.map((item: any, index: number) => {
                           const isSelected = targetMarket?.market === item.market;
                           const isBestDist = item.market === districtResult.best_market?.market;
                           return (
@@ -676,7 +676,7 @@ export default function MarketSense({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                        {analysisResult.market_comparison.map((item: MarketRecord, index: number) => {
+                        {analysisResult.market_comparison.map((item: any, index: number) => {
                           const isSelected = targetMarket?.market === item.market;
                           const isBestState = item.market === analysisResult.best_market?.market;
                           return (

@@ -12,6 +12,20 @@ import {
   AnalysisResponse,
 } from '../types';
 
+import { reverseGeocode } from '../services/geocodingService';
+
+export type LocationStatus = 'loading' | 'live' | 'fallback' | 'denied' | 'error';
+
+export interface AppLocation {
+  latitude: number;
+  longitude: number;
+  district: string;
+  city: string;
+  state: string;
+  locationName: string;
+  locationStatus: LocationStatus;
+}
+
 import { getTTSProvider } from '../services/voiceService';
 
 import {
@@ -78,6 +92,9 @@ interface AppContextType {
   userLocation: string;
   setUserLocation: (loc: string) => void;
 
+  location: AppLocation;
+  requestLocation: () => void;
+
   voiceSpeed: number;
   setVoiceSpeed: (speed: number) => void;
 
@@ -89,6 +106,7 @@ interface AppContextType {
   speakText: (text: string) => void;
   stopSpeech: () => void;
 
+  resetDiagnosis: () => void;
   resetDemoState: () => void;
 }
 
@@ -120,10 +138,113 @@ export const AppProvider: React.FC<{
   const [selectedCrop, setSelectedCrop] =
     useState<CropId>('paddy');
 
-  const [userLocation, setUserLocation] =
+  const [userLocation, setUserLocationState] =
     useState<string>(
       'Madurai, Tamil Nadu'
     );
+
+  const [location, setLocation] = useState<AppLocation>({
+    latitude: 9.9252,
+    longitude: 78.1198,
+    district: 'Madurai',
+    city: 'Madurai',
+    state: 'Tamil Nadu',
+    locationName: 'Madurai, Tamil Nadu',
+    locationStatus: 'fallback',
+  });
+
+  const setUserLocation = (locName: string) => {
+    setUserLocationState(locName);
+    setLocation(prev => ({ ...prev, locationName: locName }));
+  };
+
+  const requestLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocation(prev => ({
+        ...prev,
+        latitude: 9.9252,
+        longitude: 78.1198,
+        district: 'Madurai',
+        city: 'Madurai',
+        state: 'Tamil Nadu',
+        locationName: 'Madurai, Tamil Nadu',
+        locationStatus: 'fallback',
+      }));
+      setUserLocationState('Madurai, Tamil Nadu');
+      return;
+    }
+
+    setLocation(prev => ({ ...prev, locationStatus: 'loading' }));
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setLocation(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lng,
+          locationStatus: 'live',
+        }));
+
+        const geoResult = await reverseGeocode(lat, lng);
+
+        if (geoResult && (geoResult.district || geoResult.state)) {
+          const dist = geoResult.district || 'Madurai';
+          const st = geoResult.state || 'Tamil Nadu';
+          const name = geoResult.displayName || `${geoResult.city || dist}, ${st}`;
+
+          setLocation({
+            latitude: lat,
+            longitude: lng,
+            district: dist,
+            city: geoResult.city || dist,
+            state: st,
+            locationName: name,
+            locationStatus: 'live',
+          });
+          setUserLocationState(name);
+        } else {
+          // GPS succeeded, reverse geocode failed: KEEP real GPS coords!
+          setLocation(prev => ({
+            ...prev,
+            latitude: lat,
+            longitude: lng,
+            locationStatus: 'live',
+            locationName:
+              prev.locationName && prev.locationName !== 'Madurai, Tamil Nadu'
+                ? prev.locationName
+                : 'Current Location',
+          }));
+          setUserLocationState('Current Location');
+        }
+      },
+      (error) => {
+        console.warn('Geolocation error:', error);
+        const status: LocationStatus = error.code === 1 ? 'denied' : 'fallback';
+        setLocation({
+          latitude: 9.9252,
+          longitude: 78.1198,
+          district: 'Madurai',
+          city: 'Madurai',
+          state: 'Tamil Nadu',
+          locationName: 'Madurai, Tamil Nadu',
+          locationStatus: status,
+        });
+        setUserLocationState('Madurai, Tamil Nadu');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  };
+
+  React.useEffect(() => {
+    requestLocation();
+  }, []);
 
   const [voiceSpeed, setVoiceSpeed] =
     useState<number>(1.0);
@@ -718,6 +839,19 @@ export const AppProvider: React.FC<{
   // RESET
   // =====================================================
 
+  const resetDiagnosis = () => {
+    stopSpeech();
+
+    setLastPrediction(null);
+
+    setDiagnosisState({
+      step: 'select_crop',
+      imageUri: null,
+      resultType: 'disease',
+      result: null,
+    });
+  };
+
   const resetDemoState =
     () => {
       stopSpeech();
@@ -738,23 +872,7 @@ export const AppProvider: React.FC<{
         'paddy'
       );
 
-      setLastPrediction(
-        null
-      );
-
-      setDiagnosisState({
-        step:
-          'select_crop',
-
-        imageUri:
-          null,
-
-        resultType:
-          'disease',
-
-        result:
-          null,
-      });
+      resetDiagnosis();
 
       setWhatIfOption(
         'wait_weather'
@@ -800,6 +918,9 @@ export const AppProvider: React.FC<{
         userLocation,
         setUserLocation,
 
+        location,
+        requestLocation,
+
         voiceSpeed,
         setVoiceSpeed,
 
@@ -811,6 +932,7 @@ export const AppProvider: React.FC<{
         speakText,
         stopSpeech,
 
+        resetDiagnosis,
         resetDemoState,
       }}
     >

@@ -1,21 +1,103 @@
-import React from 'react';
-import { Camera, CloudSun, TrendingUp, HelpCircle, Lightbulb, ChevronRight, Sprout } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Camera, CloudSun, TrendingUp, HelpCircle, Lightbulb, ChevronRight, Sprout, Loader2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { translations, getLocalizedDisplay } from '../../i18n/translations';
-import { MOCK_WEATHER_DATA, MANDI_OPTIONS } from '../../data/mockData';
+import { getWeather, WeatherResponse } from '../../services/weatherApi';
+import { getMarketAnalysis, MarketAnalysisResponse } from '../../services/marketApi';
 
 export const HomeScreen: React.FC = () => {
-  const { language, setActiveTab, selectedCrop, triggerDiagnosis } = useApp();
+  const { language, setActiveTab, selectedCrop, resetDiagnosis, location, marketQuantityKg } = useApp();
   const t = translations[language];
 
-  const weather = MOCK_WEATHER_DATA[language];
-  const market = MANDI_OPTIONS[selectedCrop][0];
-  const localizedMandiName = getLocalizedDisplay(market.name, language);
+  const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(true);
+  const [weatherError, setWeatherError] = useState<boolean>(false);
+
+  const [marketData, setMarketData] = useState<MarketAnalysisResponse | null>(null);
+  const [marketLoading, setMarketLoading] = useState<boolean>(true);
+
+  // Fetch real Weather data using shared location coordinates
+  useEffect(() => {
+    let isMounted = true;
+    setWeatherLoading(true);
+    setWeatherError(false);
+
+    getWeather(location.latitude, location.longitude)
+      .then((data) => {
+        if (isMounted) {
+          setWeatherData(data);
+          setWeatherLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Home weather fetch failed:', err);
+        if (isMounted) {
+          setWeatherError(true);
+          setWeatherLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.latitude, location.longitude]);
+
+  // Fetch real Market data using crop, location state & district
+  useEffect(() => {
+    let isMounted = true;
+    setMarketLoading(true);
+
+    getMarketAnalysis({
+      commodity: selectedCrop,
+      state: location.state || 'Tamil Nadu',
+      district: location.district || 'Madurai',
+      quantity_kg: marketQuantityKg,
+      user_lat: location.latitude,
+      user_lng: location.longitude,
+    })
+      .then((data) => {
+        if (isMounted) {
+          setMarketData(data);
+          setMarketLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Home market fetch failed:', err);
+        if (isMounted) {
+          setMarketLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCrop, location.state, location.district, location.latitude, location.longitude, marketQuantityKg]);
 
   const handleStartScan = () => {
+    resetDiagnosis();
     setActiveTab('diagnose');
-    triggerDiagnosis(selectedCrop, 'disease');
   };
+
+  // Deterministic Today's Insight UI logic based on returned weather data
+  const getInsightText = (): string => {
+    if (!weatherData || weatherError) {
+      return t.insightSuitable;
+    }
+    if (weatherData.rain_prob !== null && weatherData.rain_prob >= 60) {
+      return t.insightHighRain;
+    }
+    if (weatherData.wind !== null && weatherData.wind >= 20) {
+      return t.insightHighWind;
+    }
+    if (weatherData.humidity !== null && weatherData.humidity >= 80) {
+      return t.insightHighHumidity;
+    }
+    return t.insightSuitable;
+  };
+
+  const bestMarketName = marketData?.best_market?.market || marketData?.records?.[0]?.market || 'Madurai';
+  const localizedMandiName = getLocalizedDisplay(bestMarketName, language);
+  const isLocalFallbackMarket = marketData?.data_source === 'local_fallback';
 
   return (
     <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
@@ -70,14 +152,27 @@ export const HomeScreen: React.FC = () => {
               </span>
             </div>
             <p className="text-xs font-bold text-[#6F786F] uppercase tracking-wider">{t.weatherTodayTitle}</p>
-            <div className="text-3xl font-black text-[#1D2A20] mt-1">
-              {weather.temperature}°C
-            </div>
+            {weatherLoading ? (
+              <div className="flex items-center gap-2 text-sage-600 mt-3">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-xs font-medium">Loading weather...</span>
+              </div>
+            ) : weatherError || !weatherData || weatherData.temp === null ? (
+              <div className="text-sm font-semibold text-rose-600 mt-2">
+                {t.weatherUnavailable}
+              </div>
+            ) : (
+              <div className="text-3xl font-black text-[#1D2A20] mt-1">
+                {Math.round(weatherData.temp)}°C
+              </div>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-sage-100 flex items-center justify-between text-xs">
-            <span className="text-[#3F4A42] font-semibold">{weather.condition}</span>
+            <span className="text-[#3F4A42] font-semibold">
+              {weatherLoading ? '...' : weatherError ? '--' : weatherData?.weather_status || 'Clear'}
+            </span>
             <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-[#1D2A20] font-bold text-xs">
-              {weather.humidity}% {t.humidity}
+              {weatherLoading ? '...' : weatherError ? '--' : `${weatherData?.humidity ?? '--'}%`} {t.humidity}
             </span>
           </div>
         </div>
@@ -97,11 +192,25 @@ export const HomeScreen: React.FC = () => {
                 <ChevronRight className="w-4 h-4" />
               </span>
             </div>
-            <p className="text-xs font-bold text-[#6F786F] uppercase tracking-wider">{t.marketSummaryTitle}</p>
-            <div className="text-3xl font-black text-[#1D2A20] mt-1">
-              ₹{market.modalPrice}
-              <span className="text-xs font-medium text-[#6F786F]"> / {t.perQuintal}</span>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-[#6F786F] uppercase tracking-wider">{t.marketSummaryTitle}</p>
+              {isLocalFallbackMarket && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  {t.recentSampleDataBadge}
+                </span>
+              )}
             </div>
+            {marketLoading ? (
+              <div className="flex items-center gap-2 text-sage-600 mt-3">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-xs font-medium">Loading market...</span>
+              </div>
+            ) : (
+              <div className="text-3xl font-black text-[#1D2A20] mt-1">
+                ₹{marketData?.best_market?.modal_price ?? marketData?.price_summary?.average_modal_price ?? '--'}
+                <span className="text-xs font-medium text-[#6F786F]"> / {t.perQuintal}</span>
+              </div>
+            )}
           </div>
           <div className="mt-3 pt-3 border-t border-sage-100 flex items-center justify-between text-xs">
             <span className="text-[#3F4A42] font-semibold truncate max-w-[150px]">
@@ -141,7 +250,7 @@ export const HomeScreen: React.FC = () => {
           <h3 className="text-base font-bold text-[#1D2A20]">{t.todayInsightTitle}</h3>
         </div>
         <p className="text-sm text-[#3F4A42] leading-relaxed font-normal">
-          {weather.farmingImpact}
+          {getInsightText()}
         </p>
         <div className="mt-4 pt-3 border-t border-sage-100 flex items-center justify-between text-xs">
           <span className="text-[#2F5436] font-bold flex items-center gap-1.5">
@@ -149,7 +258,7 @@ export const HomeScreen: React.FC = () => {
             <span>{t[selectedCrop]}</span>
           </span>
           <span className="px-3 py-1 rounded-full bg-amber-100 text-[#1D2A20] font-bold text-xs">
-            {weather.weatherRisk} {t.weatherRiskTag}
+            {location.district}
           </span>
         </div>
       </div>

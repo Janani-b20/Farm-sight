@@ -314,7 +314,7 @@ for a farmer.
     try:
         response = (
             client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=prompt,
             )
         )
@@ -509,21 +509,14 @@ Rules:
 """
 
     generation_config = (
-        types.GenerateContentConfig(
-            response_mime_type=
-                "application/json",
-
-            max_output_tokens=2048,
-
-            temperature=0.3,
-
-            thinking_config=
-                types.ThinkingConfig(
-                    thinking_budget=0
-                ),
-        )
+    types.GenerateContentConfig(
+        response_mime_type="application/json",
+        max_output_tokens=2048,
+        thinking_config=types.ThinkingConfig(
+            thinking_level="minimal"
+        ),
     )
-
+)
     raw_text = ""
 
     # ========================================================
@@ -533,7 +526,7 @@ Rules:
     try:
         response = (
             client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=prompt,
                 config=generation_config,
             )

@@ -77,7 +77,7 @@ export default function CropDoctor({ onNavigateToWhatIf }: CropDoctorProps) {
 
     try {
       // 1. Call POST /api/disease/predict
-      const predRes = await predictDisease(selectedCrop, selectedFile);
+      const predRes = await predictDisease(selectedCrop as any, selectedFile);
       setPredictResult(predRes);
 
       const diseaseLower = predRes.disease.toLowerCase();
@@ -351,7 +351,7 @@ export default function CropDoctor({ onNavigateToWhatIf }: CropDoctorProps) {
                         <span>Why Is This Happening?</span>
                       </div>
                       <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300 pl-5 list-disc leading-relaxed">
-                        {analysisResult.why_this_happening.map((point, idx) => (
+                        {analysisResult.why_this_happening.map((point: string, idx: number) => (
                           <li key={idx}>{point}</li>
                         ))}
                       </ul>
@@ -366,7 +366,7 @@ export default function CropDoctor({ onNavigateToWhatIf }: CropDoctorProps) {
                         <span>What To Do Now</span>
                       </div>
                       <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300 pl-5 list-disc leading-relaxed">
-                        {analysisResult.what_to_do_now.map((step, idx) => (
+                        {analysisResult.what_to_do_now.map((step: string, idx: number) => (
                           <li key={idx}>{step}</li>
                         ))}
                       </ul>
@@ -381,7 +381,7 @@ export default function CropDoctor({ onNavigateToWhatIf }: CropDoctorProps) {
                         <span>Recommended Treatment Plan</span>
                       </div>
                       <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300 pl-5 list-disc leading-relaxed">
-                        {analysisResult.treatment.map((tr, idx) => (
+                        {analysisResult.treatment.map((tr: string, idx: number) => (
                           <li key={idx}>{tr}</li>
                         ))}
                       </ul>
@@ -395,7 +395,7 @@ export default function CropDoctor({ onNavigateToWhatIf }: CropDoctorProps) {
                         <span>Agronomic Sources</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {analysisResult.sources.map((src, idx) => (
+                        {analysisResult.sources.map((src: any, idx: number) => (
                           <a
                             key={idx}
                             href={src.url}
