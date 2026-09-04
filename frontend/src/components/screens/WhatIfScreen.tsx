@@ -302,16 +302,13 @@ export const WhatIfScreen: React.FC = () => {
     simulation?.weather_conditions ||
     result?.weather;
 
-
   const risk =
     simulation?.risk_level || '';
-
 
   const isHighRisk =
     risk
       .toLowerCase()
       .includes('high');
-
 
   const isLowerRisk =
     risk
@@ -321,127 +318,117 @@ export const WhatIfScreen: React.FC = () => {
       .toLowerCase()
       .includes('low');
 
+  // Priority 1: Map explicit backend simulation.action
+  // Priority 2: Infer from recommendation text / weather fallback
+  const getBestOptionId = (): string | null => {
+    const backendAction =
+      simulation?.action ||
+      (result as any)?.whatif?.simulation?.action ||
+      (result as any)?.action;
+
+    if (backendAction) {
+      const act = String(backendAction).toLowerCase();
+      if (act.includes('wait') || act.includes('delay')) return 'wait_weather';
+      if (act.includes('spray') || act.includes('treat') || act.includes('chemical')) return 'treat_now';
+      if (act.includes('bio')) return 'bio_control';
+      if (act.includes('monitor') || act.includes('observe')) return 'monitor_first';
+    }
+
+    const recText = (
+      simulation?.recommendation ||
+      (result as any)?.whatif?.simulation?.recommendation ||
+      ''
+    ).toLowerCase();
+
+    if (recText.includes('wait') || recText.includes('delay') || recText.includes('rain')) return 'wait_weather';
+    if (recText.includes('treat') || recText.includes('spray') || recText.includes('favourable')) return 'treat_now';
+    if (recText.includes('bio')) return 'bio_control';
+    if (recText.includes('monitor') || recText.includes('observe')) return 'monitor_first';
+
+    const rain = weather?.rain_prob ?? null;
+    if (rain !== null) {
+      if (rain >= 60) return 'wait_weather';
+      if (rain < 40) return 'treat_now';
+    }
+
+    return null;
+  };
+
+  const bestOptionId = getBestOptionId();
 
   return (
-
     <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
-
-
       {/* HEADER */}
-
       <div>
-
         <div className="flex items-center gap-2 flex-wrap">
-
           <h2 className="text-2xl font-black text-[#1D2A20] tracking-tight">
             {t.whatIfTitle}
           </h2>
 
-
           <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E7EFE3] text-[#2F5436] border border-sage-300">
             {t[selectedCrop]}
           </span>
-
         </div>
-
 
         <p className="text-sm text-[#3F4A42] font-medium mt-0.5">
           {t.whatIfSubtitle}
         </p>
-
       </div>
-
 
       {/* OPTIONS */}
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-[#E7EFE3] p-2 rounded-3xl border border-sage-200">
+        {options.map((option) => {
+          const isActive = whatIfOption === option.id;
+          const isBest = bestOptionId === option.id;
 
-        {options.map(
-          option => {
-
-            const isActive =
-              whatIfOption ===
-              option.id;
-
-
-            return (
-
-              <button
-                key={option.id}
-
-                onClick={() =>
-                  handleOption(
-                    option
-                  )
-                }
-
-                disabled={loading}
-
-                type="button"
-
-                className={`p-3.5 rounded-2xl text-xs md:text-sm font-bold transition-all text-center flex items-center justify-center min-h-[56px] ${
-                  isActive
-                    ? 'bg-[#2F5436] text-white shadow-md'
-                    : 'bg-white text-[#1D2A20] hover:bg-sage-50 border border-sage-100'
-                }`}
-              >
-
-                {option.label}
-
-              </button>
-
-            );
-          }
-        )}
-
+          return (
+            <button
+              key={option.id}
+              onClick={() => handleOption(option)}
+              type="button"
+              className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all text-center flex flex-col items-center justify-center min-h-[64px] relative ${
+                isActive
+                  ? 'bg-[#2F5436] text-white shadow-md'
+                  : 'bg-white text-[#1D2A20] hover:bg-sage-50 border border-sage-100'
+              }`}
+            >
+              <span>{option.label}</span>
+              {isBest && (
+                <span
+                  className={`mt-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs ${
+                    isActive ? 'bg-white text-[#2F5436]' : 'bg-[#2F5436] text-white'
+                  }`}
+                >
+                  {t.bestOption}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-
       {/* LOADING */}
-
-      {loading && (
-
+      {loading && !simulation && (
         <div className="bg-white rounded-3xl border border-sage-200 shadow-card p-10 text-center">
-
           <RefreshCcw className="w-9 h-9 mx-auto text-[#416A47] animate-spin" />
-
           <p className="text-sm font-bold text-[#1D2A20] mt-4">
-
             {language === 'ta'
               ? 'நேரடி What-If simulation இயங்குகிறது...'
               : language === 'hi'
               ? 'लाइव What-If simulation चल रहा है...'
               : 'Running live What-If simulation...'}
-
           </p>
-
         </div>
-
       )}
 
-
       {/* ERROR */}
-
       {!loading && error && (
-
         <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-center">
-
           <AlertTriangle className="w-8 h-8 mx-auto text-[#C85B57]" />
-
-          <p className="text-sm font-bold text-[#1D2A20] mt-3">
-            {error}
-          </p>
-
-
+          <p className="text-sm font-bold text-[#1D2A20] mt-3">{error}</p>
           <button
             type="button"
-
-            onClick={() =>
-              loadSimulation(
-                selectedOption
-              )
-            }
-
+            onClick={() => loadSimulation(selectedOption)}
             className="mt-4 px-5 py-2.5 rounded-2xl bg-[#2F5436] text-white font-bold text-sm"
           >
             {language === 'ta'
@@ -450,19 +437,18 @@ export const WhatIfScreen: React.FC = () => {
               ? 'फिर कोशिश करें'
               : 'Try Again'}
           </button>
-
         </div>
-
       )}
 
-
-      {/* REAL RESULT */}
-
-      {!loading &&
-        !error &&
-        simulation && (
-
-        <div className="bg-white rounded-3xl border border-sage-200 shadow-card p-6 md:p-8 space-y-5 max-w-4xl mx-auto">
+      {/* REAL RESULT (Supports background updating indicator) */}
+      {simulation && (
+        <div className={`bg-white rounded-3xl border border-sage-200 shadow-card p-6 md:p-8 space-y-5 max-w-4xl mx-auto transition-opacity duration-200 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+          {loading && (
+            <div className="text-xs font-bold text-[#2F5436] flex items-center gap-1.5 justify-end animate-pulse">
+              <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
+              <span>{t.updatingData || 'Updating...'}</span>
+            </div>
+          )}
 
 
           {/* RECOMMENDATION */}

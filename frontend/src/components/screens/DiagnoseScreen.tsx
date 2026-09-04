@@ -176,16 +176,16 @@ export const DiagnoseScreen: React.FC = () => {
             {/* Helpful Image Instructions */}
             <div className="bg-sage-50 rounded-2xl p-4 border border-sage-200 text-left">
               <p className="text-xs font-bold text-[#1D2A20] mb-2">
-                For better results
+                {t.betterResultsTitle}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-[#3F4A42]">
-                <p>✓ Keep one affected leaf clearly visible</p>
-                <p>✓ Use good lighting</p>
-                <p>✓ Keep the camera steady</p>
-                <p>✓ Make symptoms clearly visible</p>
-                <p>✓ Avoid very dark or blurry photos</p>
-                <p>✓ Select the correct crop first</p>
+                <p>✓ {t.photoTipLeaf}</p>
+                <p>✓ {t.photoTipLighting}</p>
+                <p>✓ {t.photoTipSteady}</p>
+                <p>✓ {t.photoTipSymptoms}</p>
+                <p>✓ {t.photoTipBlur}</p>
+                <p>✓ {t.photoTipCrop}</p>
               </div>
             </div>
           </div>
@@ -538,28 +538,14 @@ export const DiagnoseScreen: React.FC = () => {
 
                 <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 text-left">
                   <p className="text-xs font-bold text-[#1D2A20] mb-2">
-                    Try taking another photo:
+                    {t.retryPhotoTitle}
                   </p>
 
                   <div className="space-y-1 text-xs text-[#3F4A42]">
-                    <p>
-                      ✓ Move closer to the affected
-                      leaf
-                    </p>
-
-                    <p>
-                      ✓ Take the photo in good
-                      daylight
-                    </p>
-
-                    <p>
-                      ✓ Avoid blurry or dark images
-                    </p>
-
-                    <p>
-                      ✓ Keep the disease symptoms
-                      clearly visible
-                    </p>
+                    <p>✓ {t.photoTipLeaf}</p>
+                    <p>✓ {t.photoTipLighting}</p>
+                    <p>✓ {t.photoTipBlur}</p>
+                    <p>✓ {t.photoTipSymptoms}</p>
                   </div>
                 </div>
 

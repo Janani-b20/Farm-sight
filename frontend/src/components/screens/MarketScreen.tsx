@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Truck, MapPin, DollarSign, Calculator, Info, Calendar, Database, RefreshCw } from 'lucide-react';
+import { TrendingUp, Truck, MapPin, DollarSign, Calculator, Info, Calendar, Database, RefreshCw, Award } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { translations, getLocalizedDisplay } from '../../i18n/translations';
 import { VoiceButton } from '../VoiceButton';
-import { getMarketAnalysis, MarketAnalysisResponse, MarketRecord } from '../../services/marketApi';
+import { MarketAnalysisResponse, MarketRecord } from '../../services/marketApi';
 
 export const MarketScreen: React.FC = () => {
   const {
@@ -14,6 +14,7 @@ export const MarketScreen: React.FC = () => {
     selectedMandiIndex,
     setSelectedMandiIndex,
     location,
+    getMarketAnalysisCached,
   } = useApp();
 
   const t = translations[language] as any;
@@ -27,11 +28,11 @@ export const MarketScreen: React.FC = () => {
     setError(null);
 
     try {
-      const res = await getMarketAnalysis({
+      const res = await getMarketAnalysisCached({
         commodity: selectedCrop,
         state: location.state || 'Tamil Nadu',
         district: location.district || 'Madurai',
-        quantity_kg: marketQuantityKg,
+        quantity_kg: marketQuantityKg || 1000,
         user_lat: location.latitude,
         user_lng: location.longitude,
       });
@@ -107,6 +108,15 @@ export const MarketScreen: React.FC = () => {
   const safeIndex = selectedMandiIndex < records.length ? selectedMandiIndex : 0;
   const currentRecord = records[safeIndex] || records[0];
 
+  // Find index of record with highest modal_price
+  const bestPriceIndex = records.reduce((maxIdx, rec, idx, arr) => {
+    const currentPrice = rec.modal_price ?? -1;
+    const maxPrice = arr[maxIdx]?.modal_price ?? -1;
+    return currentPrice > maxPrice ? idx : maxIdx;
+  }, 0);
+
+  const isCurrentBestPrice = safeIndex === bestPriceIndex && (currentRecord.modal_price ?? 0) > 0;
+
   const dataSource = currentRecord.data_source || data.data_source || 'unavailable';
   const isFallback = dataSource === 'local_fallback';
 
@@ -129,21 +139,26 @@ export const MarketScreen: React.FC = () => {
   const transportEst = (data as any)?.transport_estimate;
   const netValEst = (data as any)?.estimated_net_value;
 
-  const transportCost: number | null =
-    netValEst?.transport_cost_rs ??
-    (data as any)?.estimated_transport_cost_rs ??
-    transportEst?.estimated_quantity_transport_cost_rs ??
-    null;
+  const hasTransportInfo = Boolean(
+    (transportEst && transportEst.has_coordinates !== false && (transportEst.estimated_road_distance_km || transportEst.aerial_distance_km)) ||
+    (netValEst && netValEst.transport_cost_rs !== null && netValEst.transport_cost_rs !== undefined && netValEst.transport_cost_rs > 0) ||
+    ((data as any)?.estimated_transport_cost_rs && (data as any)?.estimated_transport_cost_rs > 0)
+  );
 
-  const distanceKm: number | null =
-    transportEst?.estimated_road_distance_km ??
-    transportEst?.aerial_distance_km ??
-    null;
+  const transportCost: number | null = hasTransportInfo
+    ? (netValEst?.transport_cost_rs ??
+       (data as any)?.estimated_transport_cost_rs ??
+       transportEst?.estimated_quantity_transport_cost_rs ??
+       null)
+    : null;
 
-  const netValue: number | null =
-    (grossRevenue !== null && transportCost !== null)
-      ? (grossRevenue - transportCost)
-      : (netValEst?.net_value_rs ?? (data as any)?.net_value_rs ?? null);
+  const distanceKm: number | null = hasTransportInfo
+    ? (transportEst?.estimated_road_distance_km ?? transportEst?.aerial_distance_km ?? null)
+    : null;
+
+  const netValue: number | null = (hasTransportInfo && grossRevenue !== null && transportCost !== null)
+    ? (grossRevenue - transportCost)
+    : null;
 
   const voiceNarrative = `${t.marketTitle}. ${t.currentModalPrice} ₹${modalPrice ?? 'N/A'} ${t.perQuintal}. ${t.bestNearbyMandi} ${localizedMandiName}. ${variety ? variety + '.' : ''} ${grossRevenue !== null ? t.grossRevenue + ' ₹' + Math.round(grossRevenue) + '.' : ''}`;
 
@@ -154,7 +169,7 @@ export const MarketScreen: React.FC = () => {
         <div>
           <h2 className="text-2xl font-black text-[#1D2A20] tracking-tight">{t.marketTitle}</h2>
           <p className="text-sm text-[#3F4A42] font-medium">
-            {t[selectedCrop] || selectedCrop} Market Rates & Transport Return
+            {t[selectedCrop] || selectedCrop} {t.marketRatesTitle || 'Market Rates & Transport Return'}
           </p>
         </div>
         <VoiceButton variant="compact" textToSpeak={voiceNarrative} />
@@ -168,10 +183,16 @@ export const MarketScreen: React.FC = () => {
           <div className="bg-gradient-to-br from-[#2F5436] via-[#2F5436] to-[#1D2A20] text-white rounded-3xl p-6 shadow-card space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-sage-200 uppercase tracking-wider">
                     {t.currentModalPrice}
                   </span>
+                  {isCurrentBestPrice && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-amber-950 border border-amber-300 shadow-xs flex items-center gap-1">
+                      <Award className="w-3 h-3" />
+                      <span>{t.bestPriceMarket || 'Best Price Market'}</span>
+                    </span>
+                  )}
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                       isFallback
@@ -242,11 +263,12 @@ export const MarketScreen: React.FC = () => {
           {/* Mandi Selector List */}
           <div className="bg-white rounded-3xl p-5 border border-sage-200 shadow-card space-y-3">
             <label className="text-xs font-bold text-[#1D2A20] uppercase tracking-wider block">
-              Available Markets ({records.length})
+              {t.availableMarkets || 'Available Markets'} ({records.length})
             </label>
             <div className="grid grid-cols-1 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
               {records.map((rec, idx) => {
                 const isSelected = safeIndex === idx;
+                const isBestPrice = idx === bestPriceIndex && (rec.modal_price ?? 0) > 0;
                 const recMandiName = getLocalizedDisplay(rec.market, language);
                 const recDistrictName = getLocalizedDisplay(rec.district, language);
 
@@ -255,15 +277,21 @@ export const MarketScreen: React.FC = () => {
                     key={idx}
                     onClick={() => setSelectedMandiIndex(idx)}
                     type="button"
-                    className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${
+                    className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? 'border-[#2F5436] bg-[#E7EFE3] text-[#1D2A20] font-bold shadow-xs'
                         : 'border-sage-200 bg-white text-[#3F4A42] hover:border-sage-300'
                     }`}
                   >
                     <div className="space-y-1">
-                      <div className="text-sm font-bold text-[#1D2A20] flex items-center gap-2">
+                      <div className="text-sm font-bold text-[#1D2A20] flex items-center gap-2 flex-wrap">
                         <span>{recMandiName}</span>
+                        {isBestPrice && (
+                          <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md font-bold flex items-center gap-0.5">
+                            <Award className="w-3 h-3" />
+                            {t.bestPriceMarket || 'Best Price Market'}
+                          </span>
+                        )}
                         {rec.variety && (
                           <span className="text-[10px] bg-sage-200/60 px-2 py-0.5 rounded-md font-medium text-[#2F5436]">
                             {rec.variety}
@@ -301,31 +329,58 @@ export const MarketScreen: React.FC = () => {
 
         {/* Right Column: Harvest Quantity & Financial Breakdown */}
         <div className="space-y-4">
-          {/* Harvest Quantity Slider */}
+          {/* Harvest Quantity Numeric Input */}
           <div className="bg-white rounded-3xl p-5 border border-sage-200 shadow-card space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#1D2A20] uppercase tracking-wider flex items-center gap-1.5">
+              <label htmlFor="harvest-quantity-input" className="text-xs font-bold text-[#1D2A20] uppercase tracking-wider flex items-center gap-1.5">
                 <Calculator className="w-4 h-4 text-[#2F5436]" />
-                <span>{t.estimatedQuantity}</span>
+                <span>{t.harvestQuantityLabel || t.estimatedQuantity || 'Harvest Quantity'}</span>
               </label>
-              <span className="text-base font-black text-[#1D2A20] bg-[#E7EFE3] px-3.5 py-1 rounded-xl border border-sage-300">
-                {marketQuantityKg} kg ({(marketQuantityKg / 100).toFixed(1)} qtl)
+              <span className="text-sm font-bold text-[#2F5436] bg-[#E7EFE3] px-3 py-1 rounded-xl border border-sage-300">
+                {(marketQuantityKg / 100).toFixed(1)} qtl
               </span>
             </div>
 
-            <input
-              type="range"
-              min="100"
-              max="5000"
-              step="100"
-              value={marketQuantityKg}
-              onChange={(e) => setMarketQuantityKg(Number(e.target.value))}
-              className="w-full accent-[#2F5436] cursor-pointer h-2.5 bg-sage-100 rounded-lg"
-            />
-            <div className="flex justify-between text-xs text-[#6F786F] font-bold">
-              <span>100 kg</span>
-              <span>2,500 kg</span>
-              <span>5,000 kg</span>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <input
+                  id="harvest-quantity-input"
+                  type="number"
+                  min="1"
+                  max="50000"
+                  value={marketQuantityKg || ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (isNaN(val)) {
+                      setMarketQuantityKg(0);
+                    } else {
+                      setMarketQuantityKg(Math.max(1, Math.min(50000, val)));
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-[#F9FBF8] border border-sage-300 rounded-2xl text-base font-bold text-[#1D2A20] focus:outline-none focus:ring-2 focus:ring-[#2F5436]"
+                  placeholder="Enter quantity in kg"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6F786F]">
+                  kg
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[500, 1000, 2000, 5000].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setMarketQuantityKg(preset)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    marketQuantityKg === preset
+                      ? 'bg-[#2F5436] text-white shadow-xs'
+                      : 'bg-sage-100 text-[#3F4A42] hover:bg-sage-200'
+                  }`}
+                >
+                  {preset.toLocaleString()} kg
+                </button>
+              ))}
             </div>
           </div>
 
@@ -350,7 +405,7 @@ export const MarketScreen: React.FC = () => {
               ) : null}
 
               {/* Transport Cost & Distance */}
-              {transportCost !== null && transportCost > 0 ? (
+              {hasTransportInfo && transportCost !== null && transportCost > 0 ? (
                 <div className="flex items-center justify-between">
                   <span className="text-[#3F4A42] flex items-center gap-2 font-medium">
                     <Truck className="w-4 h-4 text-[#C85B57]" />
@@ -364,19 +419,19 @@ export const MarketScreen: React.FC = () => {
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between py-1 px-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                <div className="flex items-center justify-between py-2 px-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/70 text-xs">
                   <span className="text-[#3F4A42] flex items-center gap-2 font-medium">
-                    <Truck className="w-4 h-4 text-amber-600" />
+                    <Truck className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>{t.estimatedTransportCost || t.transportCost}</span>
                   </span>
-                  <span className="font-bold text-amber-700">
-                    {t.transportUnavailable}
+                  <span className="font-bold text-amber-700 text-right">
+                    {t.transportUnavailable || 'Transport estimate unavailable'}
                   </span>
                 </div>
               )}
 
               {/* Net Estimated Value Card */}
-              {netValue !== null && transportCost !== null && transportCost > 0 ? (
+              {hasTransportInfo && netValue !== null && transportCost !== null && transportCost > 0 ? (
                 <div className="p-5 rounded-2xl bg-[#2F5436] text-[#FFFFFF] flex items-center justify-between shadow-md mt-3">
                   <div>
                     <span className="text-xs text-sage-200 font-semibold block">
@@ -391,17 +446,12 @@ export const MarketScreen: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl bg-sage-50 border border-sage-200 flex items-center justify-between mt-3 text-xs">
-                  <div>
-                    <span className="text-[#6F786F] font-semibold block">
-                      {t.estimatedNetReturn || t.estimatedNetValue}
-                    </span>
-                    <span className="text-xl font-bold text-[#1D2A20]">
-                      {grossRevenue !== null ? `₹${Math.round(grossRevenue).toLocaleString()}` : '--'}
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-[#6F786F] italic">
-                    ({t.transportUnavailable})
+                <div className="p-5 rounded-2xl bg-[#F9FBF8] border border-sage-200 flex flex-col gap-1 mt-3">
+                  <span className="text-xs text-[#6F786F] font-bold uppercase tracking-wider block">
+                    {t.estimatedNetReturn || t.estimatedNetValue}
+                  </span>
+                  <span className="text-sm font-bold text-amber-800">
+                    {t.netReturnUnavailable || 'Unavailable until transport distance is known'}
                   </span>
                 </div>
               )}
@@ -417,3 +467,4 @@ export const MarketScreen: React.FC = () => {
     </div>
   );
 };
+

@@ -2,11 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { Camera, CloudSun, TrendingUp, HelpCircle, Lightbulb, ChevronRight, Sprout, Loader2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { translations, getLocalizedDisplay } from '../../i18n/translations';
-import { getWeather, WeatherResponse } from '../../services/weatherApi';
-import { getMarketAnalysis, MarketAnalysisResponse } from '../../services/marketApi';
+import { WeatherResponse } from '../../services/weatherApi';
+import { MarketAnalysisResponse } from '../../services/marketApi';
 
 export const HomeScreen: React.FC = () => {
-  const { language, setActiveTab, selectedCrop, resetDiagnosis, location, marketQuantityKg } = useApp();
+  const {
+    language,
+    setActiveTab,
+    selectedCrop,
+    resetDiagnosis,
+    location,
+    marketQuantityKg,
+    getWeatherCached,
+    getMarketAnalysisCached,
+  } = useApp();
   const t = translations[language];
 
   const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
@@ -16,13 +25,12 @@ export const HomeScreen: React.FC = () => {
   const [marketData, setMarketData] = useState<MarketAnalysisResponse | null>(null);
   const [marketLoading, setMarketLoading] = useState<boolean>(true);
 
-  // Fetch real Weather data using shared location coordinates
+  // Fetch real Weather data using shared location coordinates & 5-min cache
   useEffect(() => {
     let isMounted = true;
-    setWeatherLoading(true);
     setWeatherError(false);
 
-    getWeather(location.latitude, location.longitude)
+    getWeatherCached(location.latitude, location.longitude)
       .then((data) => {
         if (isMounted) {
           setWeatherData(data);
@@ -40,14 +48,13 @@ export const HomeScreen: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [location.latitude, location.longitude]);
+  }, [location.latitude, location.longitude, getWeatherCached]);
 
-  // Fetch real Market data using crop, location state & district
+  // Fetch real Market data using crop, location state & district & 5-min cache
   useEffect(() => {
     let isMounted = true;
-    setMarketLoading(true);
 
-    getMarketAnalysis({
+    getMarketAnalysisCached({
       commodity: selectedCrop,
       state: location.state || 'Tamil Nadu',
       district: location.district || 'Madurai',
@@ -71,7 +78,7 @@ export const HomeScreen: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedCrop, location.state, location.district, location.latitude, location.longitude, marketQuantityKg]);
+  }, [selectedCrop, location.state, location.district, location.latitude, location.longitude, marketQuantityKg, getMarketAnalysisCached]);
 
   const handleStartScan = () => {
     resetDiagnosis();

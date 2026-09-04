@@ -23,7 +23,6 @@ import {
 import { VoiceButton } from '../VoiceButton';
 
 import {
-  getWeather,
   WeatherResponse,
 } from '../../services/weatherApi';
 
@@ -207,7 +206,7 @@ const getFarmingImpact = (
 
 
 export const WeatherScreen: React.FC = () => {
-  const { language, location } = useApp();
+  const { language, location, getWeatherCached } = useApp();
 
   const t = translations[language];
 
@@ -215,25 +214,20 @@ export const WeatherScreen: React.FC = () => {
     useState<WeatherResponse | null>(null);
 
   const [loading, setLoading] =
-    useState(true);
+    useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
 
 
   const loadWeather = async () => {
-    setLoading(true);
+    if (!weather) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
-      /*
-        Temporary location:
-        Madurai, Tamil Nadu.
-
-        Later today GPS integration will
-        replace these coordinates.
-      */
-      const result = await getWeather(
+      const result = await getWeatherCached(
         location.latitude,
         location.longitude
       );
@@ -272,7 +266,7 @@ export const WeatherScreen: React.FC = () => {
 
   useEffect(() => {
     loadWeather();
-  }, [location.latitude, location.longitude]);
+  }, [location.latitude, location.longitude, getWeatherCached]);
 
 
   if (loading) {

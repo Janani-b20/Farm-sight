@@ -50,6 +50,17 @@ export const translations = {
     insightHighHumidity: 'High humidity may increase disease-favourable conditions.',
     insightSuitable: 'Weather conditions may be suitable for field activity.',
 
+    bestOption: 'Best Option',
+    recommendationLabel: 'Recommendation',
+    harvestQuantityLabel: 'Harvest Quantity (kg)',
+    bestPriceMarket: 'Best Price Market',
+    netReturnUnavailable: 'Unavailable until transport distance is known',
+    marketRatesTitle: 'Market Rates & Transport Return',
+    availableMarkets: 'Available Markets',
+    yieldProtection: 'Yield Protection',
+    costImpact: 'Cost Impact',
+    updatingData: 'Updating...',
+
     // =====================================================
     // CROPS
     // =====================================================
@@ -292,12 +303,6 @@ export const translations = {
     financialBreakdown:
       'Financial Breakdown',
 
-    yieldProtection:
-      'Yield Protection',
-
-    costImpact:
-      'Cost Impact',
-
     aiCropDiagnosisTag:
       'AI Crop Diagnosis',
 
@@ -390,6 +395,17 @@ export const translations = {
     insightHighWind: 'பலத்த காற்று தெளிப்பு மருந்து சிதறும் அபாயத்தை அதிகரிக்கும்.',
     insightHighHumidity: 'அதிக ஈரப்பதம் நோய் பரவுவதற்கு சாதகமான சூழலை உருவாக்கும்.',
     insightSuitable: 'வயல் வேலைகளுக்கு வானிலை சாதகமாக இருக்கலாம்.',
+
+    bestOption: 'சிறந்த தேர்வு',
+    recommendationLabel: 'பரிந்துரை',
+    harvestQuantityLabel: 'அறுவடை அளவு (கிலோ)',
+    bestPriceMarket: 'சிறந்த விலை சந்தை',
+    netReturnUnavailable: 'போக்குவரத்து தூரம் தெரியும் வரை கிடைக்காது',
+    marketRatesTitle: 'மண்டி விலைகள் மற்றும் போக்குவரத்து வருவாய்',
+    availableMarkets: 'கிடைக்கக்கூடிய சந்தைகள்',
+    yieldProtection: 'மகசூல் பாதுகாப்பு',
+    costImpact: 'செலவு தாக்கம்',
+    updatingData: 'புதுப்பிக்கிறது...',
 
     // CROPS
     cropSelectTitle:
@@ -689,12 +705,6 @@ export const translations = {
     financialBreakdown:
       'நிதி விவரம்',
 
-    yieldProtection:
-      'மகசூல் பாதுகாப்பு',
-
-    costImpact:
-      'செலவு தாக்கம்',
-
     aiCropDiagnosisTag:
       'AI பயிர் நோய் ஆய்வு',
 
@@ -788,6 +798,17 @@ export const translations = {
     insightHighWind: 'तेज हवा से छिड़काव के बहने का खतरा बढ़ सकता है।',
     insightHighHumidity: 'उच्च आर्द्रता से रोग के अनुकूल स्थितियां बढ़ सकती हैं।',
     insightSuitable: 'खेत के काम के लिए मौसम की स्थिति अनुकूल हो सकती है।',
+
+    bestOption: 'सबसे अच्छा विकल्प',
+    recommendationLabel: 'सलाह',
+    harvestQuantityLabel: 'फसल की मात्रा (किग्रा)',
+    bestPriceMarket: 'सबसे अच्छा भाव मंडी',
+    netReturnUnavailable: 'परिवहन दूरी ज्ञात होने तक उपलब्ध नहीं',
+    marketRatesTitle: 'मंडी भाव और परिवहन लाभ',
+    availableMarkets: 'उपलब्ध मंडियां',
+    yieldProtection: 'पैदावार सुरक्षा',
+    costImpact: 'लागत प्रभाव',
+    updatingData: 'अद्यतन कर रहा है...',
 
     // CROPS
     cropSelectTitle:
@@ -1087,12 +1108,6 @@ export const translations = {
 
     financialBreakdown:
       'वित्तीय विवरण',
-
-    yieldProtection:
-      'उपज सुरक्षा',
-
-    costImpact:
-      'लागत प्रभाव',
 
     aiCropDiagnosisTag:
       'AI फसल जांच',

@@ -34,6 +34,9 @@ import {
   DiseasePredictionResponse,
 } from '../services/diseaseApi';
 
+import { getWeather, WeatherResponse } from '../services/weatherApi';
+import { getMarketAnalysis, MarketAnalysisResponse, GetMarketAnalysisParams } from '../services/marketApi';
+
 // =======================================================
 // TYPES
 // =======================================================
@@ -94,6 +97,9 @@ interface AppContextType {
 
   location: AppLocation;
   requestLocation: () => void;
+
+  getWeatherCached: (lat: number, lon: number) => Promise<WeatherResponse>;
+  getMarketAnalysisCached: (params: GetMarketAnalysisParams) => Promise<MarketAnalysisResponse>;
 
   voiceSpeed: number;
   setVoiceSpeed: (speed: number) => void;
@@ -240,6 +246,37 @@ export const AppProvider: React.FC<{
         maximumAge: 300000,
       }
     );
+  };
+
+  const weatherCacheRef = React.useRef<{ key: string; data: WeatherResponse; timestamp: number } | null>(null);
+  const marketCacheRef = React.useRef<Map<string, { data: MarketAnalysisResponse; timestamp: number }>>(new Map());
+
+  const getWeatherCached = async (lat: number, lon: number): Promise<WeatherResponse> => {
+    const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+    const now = Date.now();
+    const cached = weatherCacheRef.current;
+
+    if (cached && cached.key === key && (now - cached.timestamp < 300000)) {
+      return cached.data;
+    }
+
+    const fresh = await getWeather(lat, lon);
+    weatherCacheRef.current = { key, data: fresh, timestamp: Date.now() };
+    return fresh;
+  };
+
+  const getMarketAnalysisCached = async (params: GetMarketAnalysisParams): Promise<MarketAnalysisResponse> => {
+    const key = `${params.commodity}_${params.state}_${params.district || ''}_${params.quantity_kg || 1000}_${(params.user_lat || 0).toFixed(2)}_${(params.user_lng || 0).toFixed(2)}`;
+    const now = Date.now();
+    const cached = marketCacheRef.current.get(key);
+
+    if (cached && (now - cached.timestamp < 300000)) {
+      return cached.data;
+    }
+
+    const fresh = await getMarketAnalysis(params);
+    marketCacheRef.current.set(key, { data: fresh, timestamp: Date.now() });
+    return fresh;
   };
 
   React.useEffect(() => {
@@ -920,6 +957,9 @@ export const AppProvider: React.FC<{
 
         location,
         requestLocation,
+
+        getWeatherCached,
+        getMarketAnalysisCached,
 
         voiceSpeed,
         setVoiceSpeed,
