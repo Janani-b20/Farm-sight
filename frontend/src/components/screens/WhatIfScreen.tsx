@@ -37,7 +37,6 @@ interface Option {
 
 
 export const WhatIfScreen: React.FC = () => {
-
   const {
     language,
     whatIfOption,
@@ -47,226 +46,130 @@ export const WhatIfScreen: React.FC = () => {
     location,
   } = useApp();
 
+  const t = translations[language];
 
-  const t =
-    translations[language];
-
-
-  const [
-    result,
-    setResult,
-  ] =
-    useState<WhatIfResponse | null>(
-      null
-    );
-
-
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(false);
-
-
-  const [
-    error,
-    setError,
-  ] =
-    useState<string | null>(
-      null
-    );
-
+  const [scenariosMap, setScenariosMap] = useState<Record<string, WhatIfResponse>>({});
+  const [bestOptionId, setBestOptionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const options: Option[] = [
     {
       id: 'wait_weather',
-      action:
-        'wait_for_better_weather',
-      label:
-        t.optionWait,
+      action: 'wait_for_better_weather',
+      label: t.optionWait,
     },
-
     {
       id: 'treat_now',
-      action:
-        'spray_immediately',
-      label:
-        t.optionTreatNow,
+      action: 'spray_immediately',
+      label: t.optionTreatNow,
     },
-
     {
       id: 'bio_control',
-      action:
-        'bio_control',
-      label:
-        t.optionBioControl,
+      action: 'bio_control',
+      label: t.optionBioControl,
     },
-
     {
       id: 'monitor_first',
-      action:
-        'monitor_first',
-      label:
-        t.optionMonitor,
+      action: 'monitor_first',
+      label: t.optionMonitor,
     },
   ];
 
+  const diagnosis = diagnosisState.result;
 
-  const diagnosis =
-    diagnosisState.result;
-
-
-  const selectedOption =
-    options.find(
-      option =>
-        option.id ===
-        whatIfOption
-    ) || options[0];
-
-
-  const loadSimulation =
-    async (
-      option: Option
-    ) => {
-
-      if (
-        !diagnosis ||
-        diagnosisState.resultType !==
-          'disease'
-      ) {
-        return;
-      }
-
-
-      setLoading(true);
-      setError(null);
-
-
-      try {
-
-        const response =
-          await runWhatIf({
-            crop:
-              selectedCrop,
-
-            disease:
-              diagnosis.disease || '',
-
-            confidence:
-              diagnosis.confidence ?? 90,
-
-            state:
-              location.state || 'Tamil Nadu',
-
-            district:
-              location.district || 'Madurai',
-
-            latitude:
-              location.latitude,
-
-            longitude:
-              location.longitude,
-
-            farmer_action:
-              option.action,
-
-            language:
-              language,
-          });
-
-
-        setResult(response);
-
-      } catch (err) {
-
-        console.error(
-          'What-If API error:',
-          err
-        );
-
-
-        setError(
-          language === 'ta'
-            ? 'What-If முடிவை உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.'
-            : language === 'hi'
-            ? 'What-If परिणाम तैयार नहीं हो सका। कृपया फिर कोशिश करें।'
-            : 'Could not generate the What-If result. Please try again.'
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-    };
-
-
-  /*
-    Run simulation when:
-
-    - page opens
-    - option changes
-    - language changes
-
-    Disease ML is NOT rerun.
-  */
-  useEffect(() => {
-
-    if (
-      diagnosis &&
-      diagnosisState.resultType ===
-        'disease'
-    ) {
-      loadSimulation(
-        selectedOption
-      );
+  const loadAllSimulations = async () => {
+    if (!diagnosis || diagnosisState.resultType !== 'disease') {
+      return;
     }
 
-  }, [
-    whatIfOption,
-    language,
-  ]);
+    setLoading(true);
+    setError(null);
 
-
-  const handleOption =
-    (
-      option: Option
-    ) => {
-
-      setWhatIfOption(
-        option.id
+    try {
+      const requests = options.map((opt) =>
+        runWhatIf({
+          crop: selectedCrop,
+          disease: diagnosis.disease || '',
+          confidence: diagnosis.confidence ?? 90,
+          state: location.state || 'Tamil Nadu',
+          district: location.district || 'Madurai',
+          latitude: location.latitude,
+          longitude: location.longitude,
+          farmer_action: opt.action,
+          language: language,
+        }).then((res) => ({ id: opt.id, res }))
       );
 
-    };
+      const resultsList = await Promise.all(requests);
+      const newMap: Record<string, WhatIfResponse> = {};
+      resultsList.forEach(({ id, res }) => {
+        newMap[id] = res;
+      });
 
+      setScenariosMap(newMap);
+
+      // Determine bestOptionId independently of selected tab
+      const firstRes = resultsList[0]?.res;
+      const sim = firstRes?.whatif?.simulation;
+      const weatherData = sim?.weather_conditions || firstRes?.weather;
+      const rain = weatherData?.rain_prob ?? (weatherData as any)?.rain_probability ?? null;
+
+      let determinedBest: string | null = null;
+      if (rain !== null && rain !== undefined) {
+        if (rain >= 70) {
+          determinedBest = 'wait_weather';
+        } else if (rain >= 60) {
+          determinedBest = 'bio_control';
+        } else {
+          determinedBest = 'treat_now';
+        }
+      } else {
+        determinedBest = 'treat_now';
+      }
+
+      setBestOptionId(determinedBest);
+    } catch (err) {
+      console.error('What-If API error:', err);
+      setError(
+        language === 'ta'
+          ? 'What-If முடிவை உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.'
+          : language === 'hi'
+          ? 'What-If परिणाम तैयार नहीं हो सका। कृपया फिर कोशिश करें।'
+          : 'Could not generate the What-If result. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (diagnosis && diagnosisState.resultType === 'disease') {
+      loadAllSimulations();
+    }
+  }, [selectedCrop, diagnosis?.disease, location.latitude, location.longitude, language]);
+
+  const handleOption = (option: Option) => {
+    setWhatIfOption(option.id);
+  };
 
   /*
     No disease diagnosis exists yet.
   */
-  if (
-    !diagnosis ||
-    diagnosisState.resultType !==
-      'disease'
-  ) {
-
+  if (!diagnosis || diagnosisState.resultType !== 'disease') {
     return (
       <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
-
         <div>
           <h2 className="text-2xl font-black text-[#1D2A20] tracking-tight">
             {t.whatIfTitle}
           </h2>
-
           <p className="text-sm text-[#3F4A42] mt-1">
             {t.whatIfSubtitle}
           </p>
         </div>
 
-
         <div className="bg-white rounded-3xl border border-sage-200 shadow-card p-8 text-center">
-
           <FlaskConical className="w-12 h-12 mx-auto text-[#416A47]" />
-
           <h3 className="font-black text-[#1D2A20] mt-4">
             {language === 'ta'
               ? 'முதலில் பயிரை பரிசோதிக்கவும்'
@@ -274,7 +177,6 @@ export const WhatIfScreen: React.FC = () => {
               ? 'पहले फसल की जांच करें'
               : 'Diagnose the crop first'}
           </h3>
-
           <p className="text-sm text-[#6F786F] mt-2 max-w-md mx-auto">
             {language === 'ta'
               ? 'What-If simulation பயன்படுத்துவதற்கு முன் ஒரு இலை படத்தை பரிசோதித்து நோயை கண்டறியவும்.'
@@ -282,79 +184,18 @@ export const WhatIfScreen: React.FC = () => {
               ? 'What-If simulation का उपयोग करने से पहले पत्ती की तस्वीर से रोग की पहचान करें।'
               : 'Run disease detection first. FarmSight will then use the detected disease, confidence and live weather for the simulation.'}
           </p>
-
         </div>
-
       </div>
     );
   }
 
-
-  const simulation =
-    result?.whatif?.simulation;
-
-
-  const advisory =
-    result?.whatif?.advisory_text;
-
-
-  const weather =
-    simulation?.weather_conditions ||
-    result?.weather;
-
-  const risk =
-    simulation?.risk_level || '';
-
-  const isHighRisk =
-    risk
-      .toLowerCase()
-      .includes('high');
-
-  const isLowerRisk =
-    risk
-      .toLowerCase()
-      .includes('lower') ||
-    risk
-      .toLowerCase()
-      .includes('low');
-
-  // Priority 1: Map explicit backend simulation.action
-  // Priority 2: Infer from recommendation text / weather fallback
-  const getBestOptionId = (): string | null => {
-    const backendAction =
-      simulation?.action ||
-      (result as any)?.whatif?.simulation?.action ||
-      (result as any)?.action;
-
-    if (backendAction) {
-      const act = String(backendAction).toLowerCase();
-      if (act.includes('wait') || act.includes('delay')) return 'wait_weather';
-      if (act.includes('spray') || act.includes('treat') || act.includes('chemical')) return 'treat_now';
-      if (act.includes('bio')) return 'bio_control';
-      if (act.includes('monitor') || act.includes('observe')) return 'monitor_first';
-    }
-
-    const recText = (
-      simulation?.recommendation ||
-      (result as any)?.whatif?.simulation?.recommendation ||
-      ''
-    ).toLowerCase();
-
-    if (recText.includes('wait') || recText.includes('delay') || recText.includes('rain')) return 'wait_weather';
-    if (recText.includes('treat') || recText.includes('spray') || recText.includes('favourable')) return 'treat_now';
-    if (recText.includes('bio')) return 'bio_control';
-    if (recText.includes('monitor') || recText.includes('observe')) return 'monitor_first';
-
-    const rain = weather?.rain_prob ?? null;
-    if (rain !== null) {
-      if (rain >= 60) return 'wait_weather';
-      if (rain < 40) return 'treat_now';
-    }
-
-    return null;
-  };
-
-  const bestOptionId = getBestOptionId();
+  const currentResult = scenariosMap[whatIfOption] || Object.values(scenariosMap)[0] || null;
+  const simulation = currentResult?.whatif?.simulation;
+  const advisory = currentResult?.whatif?.advisory_text;
+  const weather = simulation?.weather_conditions || currentResult?.weather;
+  const risk = simulation?.risk_level || '';
+  const isHighRisk = risk.toLowerCase().includes('high');
+  const isLowerRisk = risk.toLowerCase().includes('lower') || risk.toLowerCase().includes('low');
 
   return (
     <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
@@ -386,7 +227,7 @@ export const WhatIfScreen: React.FC = () => {
               key={option.id}
               onClick={() => handleOption(option)}
               type="button"
-              className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all text-center flex flex-col items-center justify-center min-h-[64px] relative ${
+              className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all text-center flex flex-col items-center justify-center min-h-[64px] relative cursor-pointer ${
                 isActive
                   ? 'bg-[#2F5436] text-white shadow-md'
                   : 'bg-white text-[#1D2A20] hover:bg-sage-50 border border-sage-100'
@@ -428,8 +269,8 @@ export const WhatIfScreen: React.FC = () => {
           <p className="text-sm font-bold text-[#1D2A20] mt-3">{error}</p>
           <button
             type="button"
-            onClick={() => loadSimulation(selectedOption)}
-            className="mt-4 px-5 py-2.5 rounded-2xl bg-[#2F5436] text-white font-bold text-sm"
+            onClick={loadAllSimulations}
+            className="mt-4 px-5 py-2.5 rounded-2xl bg-[#2F5436] text-white font-bold text-sm cursor-pointer"
           >
             {language === 'ta'
               ? 'மீண்டும் முயற்சி'
@@ -440,9 +281,9 @@ export const WhatIfScreen: React.FC = () => {
         </div>
       )}
 
-      {/* REAL RESULT (Supports background updating indicator) */}
+      {/* REAL RESULT */}
       {simulation && (
-        <div className={`bg-white rounded-3xl border border-sage-200 shadow-card p-6 md:p-8 space-y-5 max-w-4xl mx-auto transition-opacity duration-200 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+        <div className="bg-white rounded-3xl border border-sage-200 shadow-card p-6 md:p-8 space-y-5 max-w-4xl mx-auto">
           {loading && (
             <div className="text-xs font-bold text-[#2F5436] flex items-center gap-1.5 justify-end animate-pulse">
               <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
@@ -495,15 +336,38 @@ export const WhatIfScreen: React.FC = () => {
 
 
           {/* VOICE */}
-
           <VoiceButton
             className="w-full"
-
             textToSpeak={
               `${simulation.recommendation}. ${simulation.simulation_outcome}. ${advisory || ''}`
             }
           />
 
+          {/* YIELD & COST METRICS */}
+          {((simulation as any).yield_protection || (simulation as any).cost_impact) && (
+            <div className="grid grid-cols-2 gap-3">
+              {(simulation as any).yield_protection && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col gap-0.5">
+                  <span className="text-[11px] font-bold text-[#416A47] uppercase tracking-wider">
+                    {t.yieldProtection || 'Yield Protection'}
+                  </span>
+                  <span className="text-base font-black text-[#1D2A20]">
+                    {(simulation as any).yield_protection}
+                  </span>
+                </div>
+              )}
+              {(simulation as any).cost_impact && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-100 flex flex-col gap-0.5">
+                  <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                    {t.costImpact || 'Cost Impact'}
+                  </span>
+                  <span className="text-base font-black text-[#1D2A20]">
+                    {(simulation as any).cost_impact}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* SIMULATION OUTCOME */}
 

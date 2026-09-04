@@ -23,7 +23,24 @@ export const MarketScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<MarketAnalysisResponse | null>(null);
 
-  const fetchMarketData = async () => {
+  // Local state for immediate slider feedback without repeated API calls
+  const [displayQuantityKg, setDisplayQuantityKg] = useState<number>(marketQuantityKg || 1000);
+
+  useEffect(() => {
+    setDisplayQuantityKg(marketQuantityKg || 1000);
+  }, [marketQuantityKg]);
+
+  // Debounce API update when slider dragging stops
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (displayQuantityKg !== marketQuantityKg && displayQuantityKg > 0) {
+        setMarketQuantityKg(displayQuantityKg);
+      }
+    }, 450);
+    return () => clearTimeout(handler);
+  }, [displayQuantityKg]);
+
+  const fetchMarketData = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
 
@@ -35,7 +52,7 @@ export const MarketScreen: React.FC = () => {
         quantity_kg: marketQuantityKg || 1000,
         user_lat: location.latitude,
         user_lng: location.longitude,
-      });
+      }, forceRefresh);
 
       setData(res);
     } catch (err: any) {
@@ -50,7 +67,7 @@ export const MarketScreen: React.FC = () => {
     fetchMarketData();
   }, [selectedCrop, location.state, location.district, location.latitude, location.longitude, marketQuantityKg]);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
         <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-sage-200 shadow-card space-y-4">
@@ -63,7 +80,7 @@ export const MarketScreen: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-3xl p-8 shadow-card text-center space-y-4">
@@ -71,7 +88,7 @@ export const MarketScreen: React.FC = () => {
             {t.errorMarketData || 'Unable to load market data.'} ({error})
           </p>
           <button
-            onClick={fetchMarketData}
+            onClick={() => fetchMarketData(true)}
             type="button"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2F5436] text-white rounded-2xl font-bold shadow-xs hover:bg-[#1D2A20] transition-all cursor-pointer"
           >
@@ -93,7 +110,7 @@ export const MarketScreen: React.FC = () => {
             {t.emptyMarketData || 'No market records found for this crop & location.'}
           </p>
           <button
-            onClick={fetchMarketData}
+            onClick={() => fetchMarketData(true)}
             type="button"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2F5436] text-white rounded-2xl font-bold shadow-xs hover:bg-[#1D2A20] transition-all cursor-pointer"
           >
@@ -105,17 +122,28 @@ export const MarketScreen: React.FC = () => {
     );
   }
 
+  // Determine if transport data exists for any record
+  const hasTransportData = records.some(
+    (rec) => (rec as any).net_value_rs !== null && (rec as any).net_value_rs !== undefined && (rec as any).transport_cost_rs !== null
+  );
+
+  // Best Market Index: Rank by highest Net Return if transport is available, else highest modal_price
+  const bestMarketIndex = records.reduce((bestIdx, rec, idx, arr) => {
+    if (hasTransportData) {
+      const currentNet = (rec as any).net_value_rs ?? -999999;
+      const maxNet = (arr[bestIdx] as any)?.net_value_rs ?? -999999;
+      return currentNet > maxNet ? idx : bestIdx;
+    } else {
+      const currentPrice = rec.modal_price ?? -1;
+      const maxPrice = arr[bestIdx]?.modal_price ?? -1;
+      return currentPrice > maxPrice ? idx : bestIdx;
+    }
+  }, 0);
+
   const safeIndex = selectedMandiIndex < records.length ? selectedMandiIndex : 0;
   const currentRecord = records[safeIndex] || records[0];
 
-  // Find index of record with highest modal_price
-  const bestPriceIndex = records.reduce((maxIdx, rec, idx, arr) => {
-    const currentPrice = rec.modal_price ?? -1;
-    const maxPrice = arr[maxIdx]?.modal_price ?? -1;
-    return currentPrice > maxPrice ? idx : maxIdx;
-  }, 0);
-
-  const isCurrentBestPrice = safeIndex === bestPriceIndex && (currentRecord.modal_price ?? 0) > 0;
+  const isCurrentBestMarket = safeIndex === bestMarketIndex;
 
   const dataSource = currentRecord.data_source || data.data_source || 'unavailable';
   const isFallback = dataSource === 'local_fallback';
@@ -130,37 +158,28 @@ export const MarketScreen: React.FC = () => {
   const localizedDistrictName = getLocalizedDisplay(currentRecord.district || '', language);
   const fullMandiLocation = localizedDistrictName ? `${localizedMandiName} (${localizedDistrictName})` : localizedMandiName;
 
-  // Gross Revenue (Modal Price per Kg * Quantity)
-  const grossRevenue = (modalPrice !== null && modalPrice !== undefined && marketQuantityKg)
-    ? (marketQuantityKg * (modalPrice / 100.0))
+  // Local Gross Revenue using displayQuantityKg (instant update on slider move)
+  const localGrossRevenue = (modalPrice !== null && modalPrice !== undefined)
+    ? (displayQuantityKg * (modalPrice / 100.0))
     : null;
 
-  // Transport Intelligence & Net Value
-  const transportEst = (data as any)?.transport_estimate;
-  const netValEst = (data as any)?.estimated_net_value;
+  // Transport Intelligence for current selected record
+  const recordTransportEst = (currentRecord as any)?.transport_estimate || (data as any)?.transport_estimate;
+  const recordTransportCost: number | null = (currentRecord as any)?.transport_cost_rs ?? (data as any)?.estimated_transport_cost_rs ?? null;
+  const distanceKm: number | null = (currentRecord as any)?.distance_km ?? recordTransportEst?.estimated_road_distance_km ?? recordTransportEst?.aerial_distance_km ?? null;
 
-  const hasTransportInfo = Boolean(
-    (transportEst && transportEst.has_coordinates !== false && (transportEst.estimated_road_distance_km || transportEst.aerial_distance_km)) ||
-    (netValEst && netValEst.transport_cost_rs !== null && netValEst.transport_cost_rs !== undefined && netValEst.transport_cost_rs > 0) ||
-    ((data as any)?.estimated_transport_cost_rs && (data as any)?.estimated_transport_cost_rs > 0)
-  );
+  const hasRecordTransport = Boolean(recordTransportCost !== null && recordTransportCost > 0);
 
-  const transportCost: number | null = hasTransportInfo
-    ? (netValEst?.transport_cost_rs ??
-       (data as any)?.estimated_transport_cost_rs ??
-       transportEst?.estimated_quantity_transport_cost_rs ??
-       null)
+  // Local Transport Cost scaled to displayQuantityKg if available
+  const localTransportCost = hasRecordTransport && recordTransportCost !== null
+    ? (marketQuantityKg > 0 ? (recordTransportCost / marketQuantityKg) * displayQuantityKg : recordTransportCost)
     : null;
 
-  const distanceKm: number | null = hasTransportInfo
-    ? (transportEst?.estimated_road_distance_km ?? transportEst?.aerial_distance_km ?? null)
+  const localNetReturn = (localGrossRevenue !== null && localTransportCost !== null)
+    ? (localGrossRevenue - localTransportCost)
     : null;
 
-  const netValue: number | null = (hasTransportInfo && grossRevenue !== null && transportCost !== null)
-    ? (grossRevenue - transportCost)
-    : null;
-
-  const voiceNarrative = `${t.marketTitle}. ${t.currentModalPrice} ₹${modalPrice ?? 'N/A'} ${t.perQuintal}. ${t.bestNearbyMandi} ${localizedMandiName}. ${variety ? variety + '.' : ''} ${grossRevenue !== null ? t.grossRevenue + ' ₹' + Math.round(grossRevenue) + '.' : ''}`;
+  const voiceNarrative = `${t.marketTitle}. ${t.currentModalPrice} ₹${modalPrice ?? 'N/A'} ${t.perQuintal}. ${t.bestNearbyMandi} ${localizedMandiName}. ${variety ? variety + '.' : ''} ${localGrossRevenue !== null ? t.grossRevenue + ' ₹' + Math.round(localGrossRevenue) + '.' : ''}`;
 
   return (
     <div className="space-y-6 pb-24 pt-2 max-w-7xl mx-auto">
@@ -187,10 +206,14 @@ export const MarketScreen: React.FC = () => {
                   <span className="text-xs font-bold text-sage-200 uppercase tracking-wider">
                     {t.currentModalPrice}
                   </span>
-                  {isCurrentBestPrice && (
+                  {isCurrentBestMarket && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-amber-950 border border-amber-300 shadow-xs flex items-center gap-1">
                       <Award className="w-3 h-3" />
-                      <span>{t.bestPriceMarket || 'Best Price Market'}</span>
+                      <span>
+                        {hasTransportData
+                          ? (t.bestMarketTag || 'Best Market (Max Net Return)')
+                          : (t.bestPriceMarket || 'Best Price Market')}
+                      </span>
                     </span>
                   )}
                   <span
@@ -268,7 +291,7 @@ export const MarketScreen: React.FC = () => {
             <div className="grid grid-cols-1 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
               {records.map((rec, idx) => {
                 const isSelected = safeIndex === idx;
-                const isBestPrice = idx === bestPriceIndex && (rec.modal_price ?? 0) > 0;
+                const isBest = idx === bestMarketIndex;
                 const recMandiName = getLocalizedDisplay(rec.market, language);
                 const recDistrictName = getLocalizedDisplay(rec.district, language);
 
@@ -286,10 +309,12 @@ export const MarketScreen: React.FC = () => {
                     <div className="space-y-1">
                       <div className="text-sm font-bold text-[#1D2A20] flex items-center gap-2 flex-wrap">
                         <span>{recMandiName}</span>
-                        {isBestPrice && (
+                        {isBest && (
                           <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md font-bold flex items-center gap-0.5">
                             <Award className="w-3 h-3" />
-                            {t.bestPriceMarket || 'Best Price Market'}
+                            {hasTransportData
+                              ? (t.bestMarketTag || 'Best Market')
+                              : (t.bestPriceMarket || 'Best Price Market')}
                           </span>
                         )}
                         {rec.variety && (
@@ -327,43 +352,36 @@ export const MarketScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Harvest Quantity & Financial Breakdown */}
+        {/* Right Column: Harvest Quantity Slider & Financial Breakdown */}
         <div className="space-y-4">
-          {/* Harvest Quantity Numeric Input */}
+          {/* Harvest Quantity Slider */}
           <div className="bg-white rounded-3xl p-5 border border-sage-200 shadow-card space-y-4">
             <div className="flex items-center justify-between">
-              <label htmlFor="harvest-quantity-input" className="text-xs font-bold text-[#1D2A20] uppercase tracking-wider flex items-center gap-1.5">
+              <label htmlFor="harvest-quantity-slider" className="text-xs font-bold text-[#1D2A20] uppercase tracking-wider flex items-center gap-1.5">
                 <Calculator className="w-4 h-4 text-[#2F5436]" />
                 <span>{t.harvestQuantityLabel || t.estimatedQuantity || 'Harvest Quantity'}</span>
               </label>
-              <span className="text-sm font-bold text-[#2F5436] bg-[#E7EFE3] px-3 py-1 rounded-xl border border-sage-300">
-                {(marketQuantityKg / 100).toFixed(1)} qtl
+              <span className="text-base font-black text-[#1D2A20] bg-[#E7EFE3] px-3.5 py-1 rounded-xl border border-sage-300">
+                {displayQuantityKg} kg ({(displayQuantityKg / 100).toFixed(1)} qtl)
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <input
-                  id="harvest-quantity-input"
-                  type="number"
-                  min="1"
-                  max="50000"
-                  value={marketQuantityKg || ''}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (isNaN(val)) {
-                      setMarketQuantityKg(0);
-                    } else {
-                      setMarketQuantityKg(Math.max(1, Math.min(50000, val)));
-                    }
-                  }}
-                  className="w-full px-4 py-3 bg-[#F9FBF8] border border-sage-300 rounded-2xl text-base font-bold text-[#1D2A20] focus:outline-none focus:ring-2 focus:ring-[#2F5436]"
-                  placeholder="Enter quantity in kg"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#6F786F]">
-                  kg
-                </span>
-              </div>
+            <input
+              id="harvest-quantity-slider"
+              type="range"
+              min="100"
+              max="5000"
+              step="100"
+              value={displayQuantityKg}
+              onChange={(e) => setDisplayQuantityKg(Number(e.target.value))}
+              onMouseUp={() => setMarketQuantityKg(displayQuantityKg)}
+              onTouchEnd={() => setMarketQuantityKg(displayQuantityKg)}
+              className="w-full accent-[#2F5436] cursor-pointer h-2.5 bg-sage-100 rounded-lg"
+            />
+            <div className="flex justify-between text-xs text-[#6F786F] font-bold">
+              <span>100 kg</span>
+              <span>2,500 kg</span>
+              <span>5,000 kg</span>
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
@@ -371,9 +389,12 @@ export const MarketScreen: React.FC = () => {
                 <button
                   key={preset}
                   type="button"
-                  onClick={() => setMarketQuantityKg(preset)}
+                  onClick={() => {
+                    setDisplayQuantityKg(preset);
+                    setMarketQuantityKg(preset);
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    marketQuantityKg === preset
+                    displayQuantityKg === preset
                       ? 'bg-[#2F5436] text-white shadow-xs'
                       : 'bg-sage-100 text-[#3F4A42] hover:bg-sage-200'
                   }`}
@@ -392,20 +413,20 @@ export const MarketScreen: React.FC = () => {
 
             <div className="space-y-3 text-sm">
               {/* Gross Revenue */}
-              {grossRevenue !== null ? (
+              {localGrossRevenue !== null ? (
                 <div className="flex items-center justify-between">
                   <span className="text-[#3F4A42] flex items-center gap-2 font-medium">
                     <DollarSign className="w-4 h-4 text-[#416A47]" />
                     <span>{t.estimatedGrossValue || t.grossRevenue}</span>
                   </span>
                   <span className="font-bold text-[#1D2A20] text-base">
-                    ₹{Math.round(grossRevenue).toLocaleString()}
+                    ₹{Math.round(localGrossRevenue).toLocaleString()}
                   </span>
                 </div>
               ) : null}
 
               {/* Transport Cost & Distance */}
-              {hasTransportInfo && transportCost !== null && transportCost > 0 ? (
+              {hasRecordTransport && localTransportCost !== null && localTransportCost > 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-[#3F4A42] flex items-center gap-2 font-medium">
                     <Truck className="w-4 h-4 text-[#C85B57]" />
@@ -415,44 +436,25 @@ export const MarketScreen: React.FC = () => {
                     </span>
                   </span>
                   <span className="font-bold text-[#C85B57] text-base">
-                    - ₹{Math.round(transportCost).toLocaleString()}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between py-2 px-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/70 text-xs">
-                  <span className="text-[#3F4A42] flex items-center gap-2 font-medium">
-                    <Truck className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>{t.estimatedTransportCost || t.transportCost}</span>
-                  </span>
-                  <span className="font-bold text-amber-700 text-right">
-                    {t.transportUnavailable || 'Transport estimate unavailable'}
+                    - ₹{Math.round(localTransportCost).toLocaleString()}
                   </span>
                 </div>
               )}
 
               {/* Net Estimated Value Card */}
-              {hasTransportInfo && netValue !== null && transportCost !== null && transportCost > 0 ? (
+              {hasRecordTransport && localNetReturn !== null && localTransportCost !== null && localTransportCost > 0 && (
                 <div className="p-5 rounded-2xl bg-[#2F5436] text-[#FFFFFF] flex items-center justify-between shadow-md mt-3">
                   <div>
                     <span className="text-xs text-sage-200 font-semibold block">
                       {t.estimatedNetReturn || t.estimatedNetValue}
                     </span>
                     <span className="text-3xl font-black tracking-tight">
-                      ₹{Math.round(netValue).toLocaleString()}
+                      ₹{Math.round(localNetReturn).toLocaleString()}
                     </span>
                   </div>
                   <div className="px-3.5 py-1.5 bg-white/20 rounded-full text-xs font-bold text-white backdrop-blur-md">
                     {t.netProfitTag}
                   </div>
-                </div>
-              ) : (
-                <div className="p-5 rounded-2xl bg-[#F9FBF8] border border-sage-200 flex flex-col gap-1 mt-3">
-                  <span className="text-xs text-[#6F786F] font-bold uppercase tracking-wider block">
-                    {t.estimatedNetReturn || t.estimatedNetValue}
-                  </span>
-                  <span className="text-sm font-bold text-amber-800">
-                    {t.netReturnUnavailable || 'Unavailable until transport distance is known'}
-                  </span>
                 </div>
               )}
             </div>

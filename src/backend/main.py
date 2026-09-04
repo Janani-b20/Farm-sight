@@ -10,6 +10,7 @@ from src.backend.routes.market import router as market_router
 from src.backend.routes.analysis import router as analysis_router
 from src.backend.routes.whatif import router as whatif_router
 from src.backend.routes.weather import router as weather_router
+from src.backend.routes import schemes
 
 
 app = FastAPI(
@@ -33,7 +34,7 @@ app.include_router(market_router)
 app.include_router(analysis_router)
 app.include_router(whatif_router)
 app.include_router(weather_router)
-
+app.include_router(schemes.router)
 
 @app.get("/")
 def root():

@@ -1,0 +1,1214 @@
+[
+    {
+        "id": "pm_kisan",
+        "scheme_name": "Pradhan Mantri Kisan Samman Nidhi",
+        "short_name": "PM-KISAN",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "detailed",
+        "benefit_type": "income_support",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "landholding_farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "income_support",
+            "farmer_welfare"
+        ],
+        "benefit": "Provides Rs. 6,000 per year in three equal instalments to eligible landholding farmer families.",
+        "eligibility_note": "Eligible landholding farmer families are identified by State and UT administrations according to PM-KISAN guidelines. Exclusion categories apply, so final eligibility must be checked on the official portal.",
+        "documents": [
+            "Aadhaar",
+            "Bank account details",
+            "Landholding information as required"
+        ],
+        "official_url": "https://www.myscheme.gov.in/schemes/pm-kisan",
+        "source": "PM-KISAN Official Portal, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "pmfby",
+        "scheme_name": "Pradhan Mantri Fasal Bima Yojana",
+        "short_name": "PMFBY",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "detailed",
+        "benefit_type": "insurance",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "owner",
+            "tenant",
+            "sharecropper"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "crop_loss",
+            "weather_risk",
+            "natural_calamity",
+            "crop_insurance"
+        ],
+        "benefit": "Provides crop insurance support for eligible crop loss or damage under notified crops, areas and scheme conditions.",
+        "eligibility_note": "Farmers growing notified crops in notified areas may be covered subject to applicable scheme and season conditions. Final eligibility depends on the relevant notification.",
+        "documents": [
+            "Identity details",
+            "Bank account details",
+            "Land or tenancy/sharecropping evidence as applicable",
+            "Crop details required by the scheme"
+        ],
+        "official_url": "https://pmfby.gov.in/",
+        "source": "PMFBY Official Portal, Ministry of Agriculture and Farmers Welfare",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "kisan_credit_card",
+        "scheme_name": "Kisan Credit Card",
+        "short_name": "KCC",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "detailed",
+        "benefit_type": "credit",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "owner",
+            "tenant",
+            "oral_lessee",
+            "sharecropper",
+            "shg",
+            "jlg"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "credit",
+            "crop_inputs",
+            "working_capital",
+            "post_harvest"
+        ],
+        "benefit": "Provides timely agricultural credit for crop cultivation, post-harvest expenses, working capital for farm assets and eligible agriculture or allied activities.",
+        "eligibility_note": "May be relevant to owner cultivators, tenant farmers, oral lessees, sharecroppers and eligible farmer groups. Final sanction and terms depend on the lending institution.",
+        "documents": [
+            "Identity and KYC documents",
+            "Land, tenancy or cultivation details as applicable",
+            "Bank-required loan documents"
+        ],
+        "official_url": "https://financialservices.gov.in/agriculture-credit",
+        "source": "Department of Financial Services, Ministry of Finance, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_info"
+    },
+    {
+        "id": "agriculture_infrastructure_fund",
+        "scheme_name": "Agriculture Infrastructure Fund",
+        "short_name": "AIF",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "basic",
+        "benefit_type": "credit_support",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer",
+            "fpo",
+            "pacs",
+            "shg",
+            "jlg",
+            "agri_entrepreneur",
+            "startup"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "post_harvest",
+            "infrastructure",
+            "storage",
+            "community_farming_assets"
+        ],
+        "benefit": "Provides financing support for eligible post-harvest management infrastructure and community farming assets.",
+        "eligibility_note": "May be relevant to farmers, FPOs, PACS, SHGs, JLGs, agri-entrepreneurs, startups and other eligible entities undertaking approved infrastructure projects. Final eligibility depends on project and scheme guidelines.",
+        "documents": [
+            "Applicant identity or entity documents",
+            "Project proposal",
+            "Financial and bank documents",
+            "Other documents required by the lending institution or scheme"
+        ],
+        "official_url": "https://agriinfra.dac.gov.in/",
+        "source": "Agriculture Infrastructure Fund Official Portal, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "per_drop_more_crop",
+        "scheme_name": "Per Drop More Crop",
+        "short_name": "PDMC",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "irrigation",
+            "water_efficiency",
+            "drip_irrigation",
+            "sprinkler_irrigation"
+        ],
+        "benefit": "Supports adoption of micro-irrigation technologies such as drip and sprinkler systems to improve farm-level water-use efficiency.",
+        "eligibility_note": "Assistance is implemented through States and depends on applicable programme guidelines, approved costs and beneficiary category. Small and marginal farmers may receive a higher assistance rate. Final eligibility must be verified with the implementing authority.",
+        "documents": [
+            "Identity details",
+            "Land or cultivation details",
+            "Bank details",
+            "Other documents required by the implementing State"
+        ],
+        "official_url": "https://www.myscheme.gov.in/schemes/pmksypdmc",
+        "source": "Official PMKSY / Per Drop More Crop Guidelines, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "smam",
+        "scheme_name": "Sub-Mission on Agricultural Mechanization",
+        "short_name": "SMAM",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer",
+            "shg",
+            "fpo",
+            "society",
+            "entrepreneur"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "machinery",
+            "custom_hiring"
+        ],
+        "benefit": "Supports farm mechanization through eligible machinery, equipment and mechanisms such as Custom Hiring Centres and Farm Machinery Banks under applicable components.",
+        "eligibility_note": "Benefits depend on the applicable SMAM component, State allocation, beneficiary category and current implementation rules. Final eligibility and subsidy availability must be checked through the official mechanization portal or State authority.",
+        "documents": [
+            "Identity details",
+            "Farmer or entity details",
+            "Bank details",
+            "Documents required for the selected machinery or component"
+        ],
+        "official_url": "https://agrimachinery.nic.in/",
+        "source": "Department of Agriculture and Farmers Welfare, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "soil_health_card",
+        "scheme_name": "Soil Health Card",
+        "short_name": "SHC",
+        "level": "central",
+        "state": "all",
+        "coverage_level": "basic",
+        "benefit_type": "other",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "soil_health",
+            "soil_testing",
+            "fertilizer_management",
+            "nutrient_management"
+        ],
+        "benefit": "Provides farmers with information on the nutrient status of their soil along with fertilizer and soil-amendment recommendations.",
+        "eligibility_note": "Relevant to farmers whose agricultural holdings are covered through soil sampling and testing under the programme. Implementation and sample collection are handled through State and Union Territory agriculture systems.",
+        "documents": [],
+        "official_url": "https://www.myscheme.gov.in/schemes/doshc",
+        "source": "Soil Health Card Portal, Department of Agriculture and Farmers Welfare, Government of India",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "tn_nfsm_rice_seed",
+        "scheme_name": "NFSM Rice - High Yielding Variety Seed Assistance",
+        "short_name": "NFSM Rice",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "paddy"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "paddy",
+            "seed",
+            "productivity",
+            "input_support"
+        ],
+        "benefit": "Provides assistance for distribution of high yielding variety paddy seeds. Assistance depends on seed variety age and applicable cost limits.",
+        "eligibility_note": "Listed for paddy farmers up to 2 hectares in specified Tamil Nadu districts. Final availability and eligibility should be confirmed with the Agriculture Department.",
+        "documents": [],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/people_app_demo/crop_plan_dashboard/scheme/en/2",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare, Agrisnet",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_nfsm_groundnut_seed",
+        "scheme_name": "NFSM Oilseeds - Groundnut Certified Seed Assistance",
+        "short_name": "NFSM Oilseeds Groundnut",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "groundnut"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "groundnut",
+            "oilseeds",
+            "seed",
+            "input_support"
+        ],
+        "benefit": "Provides assistance for distribution of certified oilseed seeds. For the listed component, assistance is 50% of seed cost or up to the applicable per-quintal limit.",
+        "eligibility_note": "Relevant to oilseed-growing farmers in eligible Tamil Nadu districts. The official listing excludes Kanyakumari, Chennai and the Nilgiris for this component. Final availability should be confirmed with the Agriculture Department.",
+        "documents": [],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/people_app_demo/crop_plan_dashboard/scheme/en/2",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare, Agrisnet",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_cotton_cultivation_mission",
+        "scheme_name": "Tamil Nadu Cotton Cultivation Mission",
+        "short_name": "Cotton Cultivation Mission",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "cotton"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "cotton",
+            "seed",
+            "input_support",
+            "productivity"
+        ],
+        "benefit": "Provides assistance under cotton cultivation components, including support for eligible quality or certified cotton seed distribution.",
+        "eligibility_note": "Relevant to cotton-cultivating farmers subject to the applicable component and district conditions. Some components exclude specified Tamil Nadu districts. Final availability should be confirmed with the Agriculture Department.",
+        "documents": [],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/people_app_demo/crop_plan_dashboard/scheme/en/2",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare, Agrisnet",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_seed_paddy",
+        "scheme_name": "Sub Mission on Seeds and Planting Materials - Paddy Certified Seed Assistance",
+        "short_name": "SMSP Paddy",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "paddy"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "paddy",
+            "certified_seed",
+            "input_support"
+        ],
+        "benefit": "Provides assistance toward certified paddy seed cost subject to the applicable subsidy ceiling.",
+        "eligibility_note": "The Tamil Nadu Agrisnet listing identifies this component for farmers. Current availability and final eligibility should be verified with the Agriculture Department.",
+        "documents": [],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/people_app_demo/crop_plan_dashboard/scheme/en/2",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare, Agrisnet",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ka_krishi_bhagya",
+        "scheme_name": "Krishi Bhagya",
+        "short_name": "Krishi Bhagya",
+        "level": "state",
+        "state": "Karnataka",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "rainfed_farming",
+            "water_conservation",
+            "climate_resilience",
+            "irrigation"
+        ],
+        "benefit": "Supports climate-resilient rainfed agriculture through eligible components such as farm ponds, protective lining, micro-irrigation equipment and related water-management assets.",
+        "eligibility_note": "May be relevant to eligible rainfed farmers in Karnataka under the applicable programme component and current departmental guidelines. Final eligibility and subsidy availability must be confirmed with the Karnataka Agriculture Department.",
+        "documents": [
+            "Farmer identity details",
+            "Landholding details",
+            "Bank account details",
+            "Other documents required by the implementing department"
+        ],
+        "official_url": "https://raitamitra.karnataka.gov.in/",
+        "source": "Government of Karnataka Agriculture Department / Karnataka Government farmer-support programme documentation",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ka_farm_mechanization",
+        "scheme_name": "Farm Mechanization Assistance",
+        "short_name": "Farm Mechanization",
+        "level": "state",
+        "state": "Karnataka",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "machinery",
+            "equipment",
+            "labour_saving"
+        ],
+        "benefit": "Provides subsidy support for eligible agricultural machinery and equipment. Assistance rates vary by beneficiary category and the applicable machinery component.",
+        "eligibility_note": "Relevant to eligible Karnataka farmers purchasing approved farm machinery or equipment. Subsidy rates and eligible equipment depend on current departmental rules and beneficiary category.",
+        "documents": [
+            "Farmer identity details",
+            "Bank details",
+            "Farmer or land details as required",
+            "Documents required for the selected machinery"
+        ],
+        "official_url": "https://raitamitra.karnataka.gov.in/",
+        "source": "Government of Karnataka Agriculture Department farmer-support programme documentation",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ka_krishi_yantra_dhare",
+        "scheme_name": "Krishi Yantra Dhare",
+        "short_name": "Krishi Yantra Dhare",
+        "level": "state",
+        "state": "Karnataka",
+        "coverage_level": "basic",
+        "benefit_type": "other",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer",
+            "farmer_group",
+            "eligible_organisation"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "custom_hiring",
+            "machinery_access"
+        ],
+        "benefit": "Supports access to agricultural machinery through Custom Hiring Centre-style mechanization services and eligible establishment support.",
+        "eligibility_note": "May be relevant to farmers seeking machinery access and eligible entities establishing approved mechanization service centres. Final programme conditions must be checked with the Karnataka Agriculture Department.",
+        "documents": [
+            "Identity or organisation details",
+            "Bank details",
+            "Project or machinery details where applicable",
+            "Other departmental documents"
+        ],
+        "official_url": "https://raitamitra.karnataka.gov.in/",
+        "source": "Government of Karnataka Agriculture Department farmer mechanization programme documentation",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ap_annadatha_sukhibhava",
+        "scheme_name": "Annadatha Sukhibhava - PM KISAN",
+        "short_name": "Annadatha Sukhibhava",
+        "level": "state",
+        "state": "Andhra Pradesh",
+        "coverage_level": "detailed",
+        "benefit_type": "income_support",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "landholding_farmer",
+            "landless_cultivator"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "income_support",
+            "farm_inputs",
+            "farmer_welfare"
+        ],
+        "benefit": "Provides annual financial assistance of Rs. 20,000 per farmer family, including the Rs. 6,000 benefit provided under PM-KISAN.",
+        "eligibility_note": "Relevant to qualifying farmer families in Andhra Pradesh. Official Andhra Pradesh information also states that financial assistance is provided to landless cultivators from the State budget. Final eligibility should be verified through the official government system.",
+        "documents": [
+            "Identity details",
+            "Bank account details",
+            "Land or cultivation records as applicable"
+        ],
+        "official_url": "https://apagrisnet.gov.in/",
+        "source": "Department of Agriculture, Government of Andhra Pradesh",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ap_farm_mechanization",
+        "scheme_name": "Andhra Pradesh Farm Mechanization",
+        "short_name": "Farm Mechanization",
+        "level": "state",
+        "state": "Andhra Pradesh",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "machinery",
+            "equipment",
+            "custom_hiring"
+        ],
+        "benefit": "Supports access to eligible agricultural machinery, implements and equipment through farm mechanization programmes and applicable subsidy components.",
+        "eligibility_note": "Relevant to Andhra Pradesh farmers subject to current targets, approved machinery, beneficiary category and available programme funds. Final subsidy and eligibility must be verified with the Agriculture Department.",
+        "documents": [
+            "Farmer identity details",
+            "Bank account details",
+            "Land or cultivation information as applicable",
+            "Machinery-related application documents"
+        ],
+        "official_url": "https://apagrisnet.gov.in/",
+        "source": "Department of Agriculture, Government of Andhra Pradesh",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ap_groundnut_nmeo_os",
+        "scheme_name": "National Mission on Edible Oilseeds - Groundnut Support",
+        "short_name": "NMEO-OS Groundnut",
+        "level": "state",
+        "state": "Andhra Pradesh",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "groundnut"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "groundnut",
+            "oilseeds",
+            "seed",
+            "bio_inputs",
+            "productivity"
+        ],
+        "benefit": "Supports edible-oilseed productivity through interventions including certified seed and other eligible inputs. Andhra Pradesh's 2026 implementation includes Groundnut clusters.",
+        "eligibility_note": "Relevant to farmers covered by selected Groundnut clusters and current programme implementation. Benefits depend on location, beneficiary category and the approved component, so final eligibility must be verified with the Agriculture Department.",
+        "documents": [
+            "Farmer identity details",
+            "Cultivation or crop details",
+            "Other documents required by the implementing Agriculture Department"
+        ],
+        "official_url": "https://apagrisnet.gov.in/",
+        "source": "Department of Agriculture, Government of Andhra Pradesh",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ts_rythu_bharosa",
+        "scheme_name": "Rythu Bharosa",
+        "short_name": "Rythu Bharosa",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "detailed",
+        "benefit_type": "income_support",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "income_support",
+            "investment_support",
+            "working_capital",
+            "farmer_welfare"
+        ],
+        "benefit": "Provides agricultural investment support to farmers. Telangana Government information in June 2026 states that Rythu Bharosa assistance was enhanced from Rs. 10,000 to Rs. 12,000 per farmer.",
+        "eligibility_note": "Relevant to qualifying farmers in Telangana under the current Rythu Bharosa implementation. Final beneficiary status and payment eligibility must be verified through the official Telangana Government system.",
+        "documents": [
+            "Farmer identity details",
+            "Land or agricultural records as applicable",
+            "Bank account details"
+        ],
+        "official_url": "https://rythubharosa.telangana.gov.in/",
+        "source": "Department of Agriculture, Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ts_rythu_bima",
+        "scheme_name": "Farmers Group Life Insurance Scheme - Rythu Bima",
+        "short_name": "Rythu Bima",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "detailed",
+        "benefit_type": "insurance",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "life_insurance",
+            "farmer_welfare",
+            "social_security"
+        ],
+        "benefit": "Provides group life-insurance based social-security support for covered farmers under the Telangana Farmers Group Life Insurance Scheme.",
+        "eligibility_note": "Coverage depends on the farmer being included under the applicable Rythu Bima rules and farmer land database. Age and other operational conditions may apply; final eligibility must be verified through the official Telangana Government system.",
+        "documents": [
+            "Farmer identity details",
+            "Land records as applicable",
+            "Nominee details",
+            "Other documents required under the scheme"
+        ],
+        "official_url": "https://rythubharosa.telangana.gov.in/",
+        "source": "Department of Agriculture, Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ts_farm_mechanization",
+        "scheme_name": "Farm Mechanization",
+        "short_name": "Farm Mechanization",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "machinery",
+            "equipment"
+        ],
+        "benefit": "Provides support under Telangana's farm mechanization programme for eligible agricultural machinery and mechanization activities.",
+        "eligibility_note": "Relevant to Telangana farmers subject to the machinery, beneficiary category, programme availability and current departmental conditions. Final subsidy and eligibility must be verified with the Agriculture Department.",
+        "documents": [
+            "Farmer identity details",
+            "Bank details",
+            "Agricultural or land details where required",
+            "Machinery-related application documents"
+        ],
+        "official_url": "https://www.telangana.gov.in/departments/agriculture-and-co-operation/",
+        "source": "Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "mh_namo_shetkari",
+        "scheme_name": "Namo Shetkari Mahasanman Nidhi Yojana",
+        "short_name": "NSMNY",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "detailed",
+        "benefit_type": "income_support",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "landholding_farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "income_support",
+            "farmer_welfare",
+            "pm_kisan_topup"
+        ],
+        "benefit": "Provides Rs. 6,000 annually in three equal instalments to eligible farmer families in addition to PM-KISAN support.",
+        "eligibility_note": "Farmers eligible for PM-KISAN are eligible for the Namo Shetkari Mahasanman Nidhi benefit, subject to applicable exclusions and government verification.",
+        "documents": [
+            "PM-KISAN registration and eligibility details",
+            "Aadhaar",
+            "Bank account details",
+            "Landholding information as applicable"
+        ],
+        "official_url": "https://www.myscheme.gov.in/schemes/namo-shetkari-mahasanman-nidhi-yojana",
+        "source": "Government of Maharashtra / myScheme",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "mh_state_agri_mechanization",
+        "scheme_name": "State Agriculture Mechanization Scheme",
+        "short_name": "State Agriculture Mechanization",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "farm_mechanization",
+            "machinery",
+            "equipment",
+            "labour_saving"
+        ],
+        "benefit": "Provides financial assistance to eligible farmers for procurement of approved farm machinery and implements.",
+        "eligibility_note": "Applicant must satisfy Maharashtra Agriculture Department requirements. Aadhaar and agricultural land records are required. Restrictions apply to repeat benefits for the same machinery component.",
+        "documents": [
+            "Aadhaar Card",
+            "7/12 Certificate",
+            "8-A Certificate",
+            "Equipment quotation",
+            "Approved testing certificate where required",
+            "Caste certificate for SC/ST beneficiaries where applicable",
+            "Self declaration",
+            "Pre-sanction letter"
+        ],
+        "official_url": "https://mahadbt.maharashtra.gov.in/",
+        "source": "MahaDBT Farmer Portal, Government of Maharashtra",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "mh_nfsm_crops",
+        "scheme_name": "National Food Security Mission - Food Grains, Oil Seeds, Sugarcane and Cotton",
+        "short_name": "NFSM Maharashtra",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "detailed",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "paddy",
+            "groundnut",
+            "cotton"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "paddy",
+            "groundnut",
+            "cotton",
+            "oilseeds",
+            "farm_mechanization",
+            "input_support"
+        ],
+        "benefit": "Provides assistance under eligible components for food grains, oilseeds, sugarcane and cotton, including approved farm machinery and related interventions.",
+        "eligibility_note": "Eligibility depends on the selected crop, scheme component and district. Maharashtra's official portal specifies district conditions for rice and oilseed components. Final eligibility must therefore be checked against the farmer's district and selected component.",
+        "documents": [
+            "Aadhaar Card",
+            "7/12 Certificate",
+            "8-A Certificate",
+            "Equipment quotation where applicable",
+            "Caste certificate for SC/ST beneficiaries where applicable",
+            "Self declaration",
+            "Pre-sanction letter where applicable"
+        ],
+        "official_url": "https://mahadbt.maharashtra.gov.in/",
+        "source": "MahaDBT Farmer Portal, Government of Maharashtra",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_shds",
+        "scheme_name": "State Horticulture Development Scheme",
+        "short_name": "SHDS",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "horticulture"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "horticulture",
+            "protected_cultivation",
+            "intercropping",
+            "farm_income"
+        ],
+        "benefit": "Supports horticulture development through eligible components including area expansion, hi-tech cultivation, protected cultivation, intercropping and other horticultural interventions.",
+        "eligibility_note": "Available to farmers and eligible individuals in Tamil Nadu. Preference is given to small and marginal farmers, women farmers and SC/ST farmers. Eligibility depends on the selected component.",
+        "documents": [
+            "Chitta",
+            "Adangal",
+            "Passport-size photographs",
+            "Ration Card or Smart Card copy",
+            "Aadhaar copy",
+            "Bank account details"
+        ],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/home/schemes/",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_kaviadp",
+        "scheme_name": "Kalaignar All Village Integrated Agricultural Development Programme",
+        "short_name": "KAVIADP",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "basic",
+        "benefit_type": "other",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer",
+            "rural_family"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "village_development",
+            "agriculture_support",
+            "farmer_welfare"
+        ],
+        "benefit": "Integrates agriculture and farmer-welfare interventions for overall agricultural development and self-sufficiency in selected village panchayats.",
+        "eligibility_note": "Families in village panchayats selected for implementation may receive applicable benefits. Actual eligibility depends on the individual component.",
+        "documents": [
+            "Patta, Chitta or Adangal as applicable",
+            "Ration Card",
+            "Aadhaar"
+        ],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/home/schemes/",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_micro_irrigation",
+        "scheme_name": "PMKSY - Micro Irrigation",
+        "short_name": "PMKSY-MI Tamil Nadu",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "irrigation",
+            "water_efficiency",
+            "micro_irrigation"
+        ],
+        "benefit": "Supports adoption of micro-irrigation to improve agricultural water-use efficiency.",
+        "eligibility_note": "Eligibility and assistance depend on farmer category, land and the applicable micro-irrigation component. Final eligibility should be checked through the Tamil Nadu Agriculture/Horticulture system.",
+        "documents": [
+            "Land records",
+            "Aadhaar",
+            "Ration Card or Smart Card",
+            "Bank account details",
+            "FMB",
+            "Soil or water test report where required"
+        ],
+        "official_url": "https://www.tnagrisnet.tn.gov.in/esevai/",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "tn_rainfed_area_development",
+        "scheme_name": "Rainfed Area Development - Integrated Farming System",
+        "short_name": "RAD-IFS",
+        "level": "state",
+        "state": "Tamil Nadu",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "rainfed_farming",
+            "integrated_farming",
+            "climate_resilience"
+        ],
+        "benefit": "Supports integrated farming interventions for farmers in rainfed areas.",
+        "eligibility_note": "The Tamil Nadu Agriculture Department lists farmers from specified districts for this programme. Current district coverage and component availability should be confirmed before recommending it.",
+        "documents": [
+            "Patta",
+            "Adangal",
+            "Aadhaar"
+        ],
+        "official_url": "https://www.myscheme.gov.in/schemes/rad",
+        "source": "Tamil Nadu Department of Agriculture - Farmers Welfare",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "ts_seed_distribution",
+        "scheme_name": "Subsidy Seed Distribution",
+        "short_name": "Seed Distribution",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "seed",
+            "input_support",
+            "crop_production"
+        ],
+        "benefit": "Supports farmers through distribution of eligible crop seed under Telangana Agriculture Department programmes.",
+        "eligibility_note": "Availability depends on crop, season, location and current Agriculture Department implementation. Final eligibility and subsidy details must be verified locally.",
+        "documents": [],
+        "official_url": "https://jagtial.telangana.gov.in/agriculture-department/",
+        "source": "Agriculture Department, Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ts_nfsm",
+        "scheme_name": "National Food Security Mission - Telangana",
+        "short_name": "NFSM Telangana",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "paddy"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "paddy",
+            "food_grains",
+            "productivity",
+            "input_support"
+        ],
+        "benefit": "Provides agricultural support through applicable National Food Security Mission components implemented by the Telangana Agriculture Department.",
+        "eligibility_note": "Eligibility depends on the crop, district and programme component being implemented. Final eligibility should be confirmed with the Agriculture Department.",
+        "documents": [],
+        "official_url": "https://jagtial.telangana.gov.in/agriculture-department/",
+        "source": "Agriculture Department, Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "ts_natural_calamity_input_subsidy",
+        "scheme_name": "Natural Calamity Input Subsidy",
+        "short_name": "Natural Calamity Assistance",
+        "level": "state",
+        "state": "Telangana",
+        "coverage_level": "basic",
+        "benefit_type": "other",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": false,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "crop_loss",
+            "natural_calamity",
+            "disaster_support"
+        ],
+        "benefit": "Provides applicable input-subsidy assistance following assessment of agricultural losses caused by natural calamities.",
+        "eligibility_note": "Relevant where crop damage is officially assessed under applicable government norms. Final assistance depends on damage assessment and current government orders.",
+        "documents": [],
+        "official_url": "https://jagtial.telangana.gov.in/agriculture-department/",
+        "source": "Agriculture Department, Government of Telangana",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "mh_midh",
+        "scheme_name": "Mission for Integrated Development of Horticulture",
+        "short_name": "MIDH Maharashtra",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "horticulture"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "horticulture",
+            "protected_cultivation",
+            "farm_income"
+        ],
+        "benefit": "Provides assistance under eligible horticulture-development components implemented through Maharashtra's Agriculture Department.",
+        "eligibility_note": "Eligibility and assistance depend on the horticulture component selected and current MahaDBT rules.",
+        "documents": [],
+        "official_url": "https://mahadbt.maharashtra.gov.in/",
+        "source": "MahaDBT Farmer Portal, Government of Maharashtra",
+        "last_verified": "2026-08-31",
+        "url_type": "invalid"
+    },
+    {
+        "id": "mh_rainfed_area_development",
+        "scheme_name": "PMRKVY - Rainfed Area Development",
+        "short_name": "RAD Maharashtra",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "rainfed_farming",
+            "climate_resilience",
+            "integrated_farming"
+        ],
+        "benefit": "Supports eligible rainfed-area and integrated-farming interventions.",
+        "eligibility_note": "The official Maharashtra portal states that the programme covers all 34 districts under its operational area. Component-specific eligibility must still be checked before application.",
+        "documents": [],
+        "official_url": "https://www.myscheme.gov.in/schemes/rad",
+        "source": "MahaDBT Farmer Portal, Government of Maharashtra",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    },
+    {
+        "id": "mh_cm_sustainable_irrigation",
+        "scheme_name": "Chief Minister Sustainable Agriculture Irrigation Scheme",
+        "short_name": "CM Sustainable Irrigation",
+        "level": "state",
+        "state": "Maharashtra",
+        "coverage_level": "basic",
+        "benefit_type": "input_subsidy",
+        "crops": [
+            "all"
+        ],
+        "farmer_types_allowed": [
+            "farmer"
+        ],
+        "landholding_required": true,
+        "age_min": null,
+        "age_max": null,
+        "income_cap": null,
+        "category_restrictions": [],
+        "risk_tags": [
+            "irrigation",
+            "water_management",
+            "drought_resilience"
+        ],
+        "benefit": "Provides support through eligible sustainable agricultural irrigation components.",
+        "eligibility_note": "Eligibility depends on the applicable irrigation component and current Maharashtra Agriculture Department rules.",
+        "documents": [],
+        "official_url": "https://www.myscheme.gov.in/schemes/chief-minister-sustainable-agriculture-irrigation-scheme",
+        "source": "MahaDBT Farmer Portal, Government of Maharashtra",
+        "last_verified": "2026-08-31",
+        "url_type": "exact_myscheme"
+    }
+]

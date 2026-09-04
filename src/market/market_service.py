@@ -88,35 +88,43 @@ class MarketService:
             records_found = False
             last_error = None
 
-            for api_commodity in variants:
-                params = dict(params_base)
-                params["filters[commodity]"] = api_commodity
-                params["filters[district]"] = district
-                if market:
-                    params["filters[market]"] = market
+            district_variants = [district]
+            norm_dist = district.lower().strip()
+            if norm_dist in ["bengaluru", "bangalore", "bengaluru urban", "bangalore urban"]:
+                district_variants = ["Bengaluru", "Bangalore", "Bengaluru Urban", "Bangalore Urban"]
 
-                logger.info(f"Querying data.gov.in with variant '{api_commodity}' for district '{district}'")
-                try:
-                    response = requests.get(
-                        self.base_url,
-                        params=params,
-                        headers=self.headers,
-                        timeout=(5, 10)
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    raw_records = data.get("records", [])
-                    if raw_records:
-                        for record in raw_records:
-                            parsed = self._parse_record(record)
-                            parsed["data_source"] = "data.gov.in"
-                            district_records.append(parsed)
-                        records_found = True
-                        break
-                except (requests.Timeout, requests.RequestException, ValueError) as e:
-                    logger.warning(f"Request failed for variant '{api_commodity}': {e}")
-                    last_error = e
-                    continue
+            for dist_var in district_variants:
+                for api_commodity in variants:
+                    params = dict(params_base)
+                    params["filters[commodity]"] = api_commodity
+                    params["filters[district]"] = dist_var
+                    if market:
+                        params["filters[market]"] = market
+
+                    logger.info(f"Querying data.gov.in with variant '{api_commodity}' for district '{dist_var}'")
+                    try:
+                        response = requests.get(
+                            self.base_url,
+                            params=params,
+                            headers=self.headers,
+                            timeout=(5, 10)
+                        )
+                        response.raise_for_status()
+                        data = response.json()
+                        raw_records = data.get("records", [])
+                        if raw_records:
+                            for record in raw_records:
+                                parsed = self._parse_record(record)
+                                parsed["data_source"] = "data.gov.in"
+                                district_records.append(parsed)
+                            records_found = True
+                            break
+                    except (requests.Timeout, requests.RequestException, ValueError) as e:
+                        logger.warning(f"Request failed for variant '{api_commodity}': {e}")
+                        last_error = e
+                        continue
+                if records_found:
+                    break
 
             if records_found and district_records:
                 # Sort by date descending and filter to only the most recent date
@@ -350,6 +358,21 @@ class MarketService:
                     if not commodity_match or rec_state != norm_state:
                         continue
                     filtered.append(record)
+
+            # If still empty for state, relax state constraint so demo never renders empty screen
+            if not filtered:
+                district_unavailable = True
+                filtered = []
+                for record in data:
+                    rec_commodity = record.get("commodity", "").lower().strip()
+                    commodity_match = False
+                    if norm_commodity in paddy_names and rec_commodity in paddy_names:
+                        commodity_match = True
+                    elif norm_commodity == rec_commodity:
+                        commodity_match = True
+
+                    if commodity_match:
+                        filtered.append(record)
 
             for rec in filtered:
                 rec["data_source"] = "local_fallback"

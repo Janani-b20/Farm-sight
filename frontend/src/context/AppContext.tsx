@@ -99,7 +99,7 @@ interface AppContextType {
   requestLocation: () => void;
 
   getWeatherCached: (lat: number, lon: number) => Promise<WeatherResponse>;
-  getMarketAnalysisCached: (params: GetMarketAnalysisParams) => Promise<MarketAnalysisResponse>;
+  getMarketAnalysisCached: (params: GetMarketAnalysisParams, forceRefresh?: boolean) => Promise<MarketAnalysisResponse>;
 
   voiceSpeed: number;
   setVoiceSpeed: (speed: number) => void;
@@ -265,17 +265,21 @@ export const AppProvider: React.FC<{
     return fresh;
   };
 
-  const getMarketAnalysisCached = async (params: GetMarketAnalysisParams): Promise<MarketAnalysisResponse> => {
+  const getMarketAnalysisCached = async (params: GetMarketAnalysisParams, forceRefresh = false): Promise<MarketAnalysisResponse> => {
     const key = `${params.commodity}_${params.state}_${params.district || ''}_${params.quantity_kg || 1000}_${(params.user_lat || 0).toFixed(2)}_${(params.user_lng || 0).toFixed(2)}`;
     const now = Date.now();
     const cached = marketCacheRef.current.get(key);
 
-    if (cached && (now - cached.timestamp < 300000)) {
+    if (!forceRefresh && cached && (now - cached.timestamp < 300000) && cached.data?.records && cached.data.records.length > 0) {
       return cached.data;
     }
 
     const fresh = await getMarketAnalysis(params);
-    marketCacheRef.current.set(key, { data: fresh, timestamp: Date.now() });
+    if (fresh && fresh.records && fresh.records.length > 0) {
+      marketCacheRef.current.set(key, { data: fresh, timestamp: Date.now() });
+    } else {
+      marketCacheRef.current.delete(key);
+    }
     return fresh;
   };
 

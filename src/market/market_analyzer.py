@@ -150,15 +150,69 @@ class MarketAnalyzer:
         comparison = self.get_market_comparison()
         trend = self.get_price_trend()
 
+        # Net Value & Transport calculation for all records
+        ts = None
+        if user_lat is not None and user_lng is not None:
+            try:
+                try:
+                    from transport.transport_service import TransportService
+                except ImportError:
+                    from src.transport.transport_service import TransportService
+                ts = TransportService()
+            except Exception as e:
+                logger.error(f"Error initializing TransportService: {e}")
+
+        for r in self.records:
+            gross = self.calculate_gross_value(quantity_kg, r["modal_price"]) if quantity_kg is not None else None
+            r["gross_value_rs"] = gross
+            if ts and user_lat is not None and user_lng is not None and quantity_kg is not None:
+                try:
+                    t_res = ts.calculate_transport(
+                        market_name=r["market"],
+                        district=r.get("district", ""),
+                        state=r.get("state", ""),
+                        user_lat=user_lat,
+                        user_lng=user_lng,
+                        quantity_kg=quantity_kg
+                    )
+                    if t_res.get("status") == "success":
+                        t_cost = t_res.get("estimated_quantity_transport_cost_rs")
+                        if t_cost is None:
+                            t_cost = t_res.get("base_transport_cost_rs")
+                        r["transport_cost_rs"] = t_cost
+                        r["distance_km"] = t_res.get("estimated_road_distance_km") or t_res.get("aerial_distance_km")
+                        r["net_value_rs"] = (gross - t_cost) if (gross is not None and t_cost is not None) else None
+                        r["transport_estimate"] = t_res
+                    else:
+                        r["transport_cost_rs"] = None
+                        r["distance_km"] = None
+                        r["net_value_rs"] = None
+                        r["transport_estimate"] = None
+                except Exception as ex:
+                    logger.warning(f"Transport calculation failed for market '{r.get('market')}': {ex}")
+                    r["transport_cost_rs"] = None
+                    r["distance_km"] = None
+                    r["net_value_rs"] = None
+                    r["transport_estimate"] = None
+
+        # Best Market logic: Rank by highest net_value_rs if transport is available, else highest modal_price
+        has_any_net_value = any(r.get("net_value_rs") is not None for r in self.records)
+        if has_any_net_value:
+            best_market = max(
+                self.records,
+                key=lambda x: (x.get("net_value_rs") if x.get("net_value_rs") is not None else -999999)
+            )
+        else:
+            best_market = self.get_best_market()
+
         estimated_gross_value = None
         if quantity_kg is not None and best_market is not None:
             estimated_gross_value = self.calculate_gross_value(
                 quantity_kg, best_market["modal_price"]
             )
 
-        # Net Value & Transport calculation
         estimated_net_value = None
-        transport_estimate = None
+        transport_estimate = best_market.get("transport_estimate") if best_market else None
 
         if quantity_kg is None:
             estimated_net_value = {
@@ -184,58 +238,24 @@ class MarketAnalyzer:
                 "net_value_rs": None,
                 "calculation_basis": "Farmer location coordinates (latitude and longitude) are required for transport and net value calculation."
             }
+        elif best_market and best_market.get("transport_cost_rs") is not None:
+            t_cost = best_market["transport_cost_rs"]
+            net_val = best_market.get("net_value_rs")
+            estimated_net_value = {
+                "quantity_kg": quantity_kg,
+                "gross_value_rs": round(estimated_gross_value, 2),
+                "transport_cost_rs": t_cost,
+                "net_value_rs": net_val,
+                "calculation_basis": f"Gross crop value (Rs. {round(estimated_gross_value, 2)}) - estimated transport cost (Rs. {t_cost}) = estimated net return (Rs. {net_val})"
+            }
         else:
-            try:
-                from transport.transport_service import TransportService
-                ts = TransportService()
-                t_res = ts.calculate_transport(
-                    market_name=best_market["market"],
-                    district=best_market.get("district", ""),
-                    state=best_market.get("state", ""),
-                    user_lat=user_lat,
-                    user_lng=user_lng,
-                    quantity_kg=quantity_kg
-                )
-                transport_estimate = t_res
-                if t_res.get("status") == "success":
-                    t_cost = t_res.get("estimated_quantity_transport_cost_rs")
-                    if t_cost is None:
-                        t_cost = t_res.get("base_transport_cost_rs")
-
-                    if t_cost is not None:
-                        net_val = round(estimated_gross_value - t_cost, 2)
-                        estimated_net_value = {
-                            "quantity_kg": quantity_kg,
-                            "gross_value_rs": round(estimated_gross_value, 2),
-                            "transport_cost_rs": t_cost,
-                            "net_value_rs": net_val,
-                            "calculation_basis": f"Gross crop value (Rs. {round(estimated_gross_value, 2)}) - estimated transport cost using {t_res.get('transport_type')} (Rs. {t_cost}) = estimated net value (Rs. {net_val})"
-                        }
-                    else:
-                        estimated_net_value = {
-                            "quantity_kg": quantity_kg,
-                            "gross_value_rs": round(estimated_gross_value, 2),
-                            "transport_cost_rs": None,
-                            "net_value_rs": None,
-                            "calculation_basis": "Transport cost calculation is unavailable: quantity-based cost could not be computed."
-                        }
-                else:
-                    estimated_net_value = {
-                        "quantity_kg": quantity_kg,
-                        "gross_value_rs": round(estimated_gross_value, 2),
-                        "transport_cost_rs": None,
-                        "net_value_rs": None,
-                        "calculation_basis": f"Transport cost calculation is unavailable: {t_res.get('message', 'Mandi coordinates lookup failed.')}"
-                    }
-            except Exception as e:
-                logger.error(f"Error calculating transport inside analyzer: {e}")
-                estimated_net_value = {
-                    "quantity_kg": quantity_kg,
-                    "gross_value_rs": round(estimated_gross_value, 2),
-                    "transport_cost_rs": None,
-                    "net_value_rs": None,
-                    "calculation_basis": f"Transport cost calculation failed due to an unexpected error: {str(e)}"
-                }
+            estimated_net_value = {
+                "quantity_kg": quantity_kg,
+                "gross_value_rs": round(estimated_gross_value, 2),
+                "transport_cost_rs": None,
+                "net_value_rs": None,
+                "calculation_basis": "Transport cost calculation is unavailable for the selected market."
+            }
 
         if self.records:
             data_source = self.records[0].get("data_source", "data.gov.in")
