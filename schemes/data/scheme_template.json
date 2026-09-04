@@ -1,0 +1,23 @@
+{
+  "id": "",
+  "scheme_name": "",
+  "short_name": "",
+  "level": "",
+  "state": "",
+  "coverage_level": "basic",
+  "benefit_type": "",
+  "crops": [],
+  "farmer_types_allowed": [],
+  "landholding_required": null,
+  "age_min": null,
+  "age_max": null,
+  "income_cap": null,
+  "category_restrictions": [],
+  "risk_tags": [],
+  "benefit": "",
+  "eligibility_note": "",
+  "documents": [],
+  "official_url": "",
+  "source": "",
+  "last_verified": ""
+}
