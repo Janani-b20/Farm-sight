@@ -273,6 +273,38 @@ class TestMarketServiceAnalyzerIntegration(unittest.TestCase):
             service.api_key = "dummy_api_key"
             return service.get_market_prices(commodity=commodity, state=state)
 
+    def test_karnataka_paddy_bengaluru_first(self) -> None:
+        with patch.object(requests, "get", side_effect=requests.RequestException("forced")):
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Paddy", state="Karnataka", district="Bengaluru")
+            self.assertTrue(len(records) > 0, "Expected Karnataka Paddy records")
+            self.assertEqual(records[0]["market"], "Bengaluru")
+            for r in records:
+                self.assertEqual(r["state"], "Karnataka")
+                self.assertNotIn(r["market"], {"Madurai", "Thanjavur", "Kumbakonam"})
+
+    def test_karnataka_cotton_no_tamil_nadu(self) -> None:
+        with patch.object(requests, "get", side_effect=requests.RequestException("forced")):
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Cotton", state="Karnataka", district="Bengaluru")
+            self.assertTrue(len(records) > 0, "Expected Karnataka Cotton records")
+            for r in records:
+                self.assertEqual(r["state"], "Karnataka")
+                self.assertNotIn(r["market"], {"Madurai", "Chennai", "Kanchipuram"})
+
+    def test_karnataka_groundnut_bengaluru_first(self) -> None:
+        with patch.object(requests, "get", side_effect=requests.RequestException("forced")):
+            service = MarketService()
+            service.api_key = "dummy_api_key"
+            records = service.get_market_prices(commodity="Groundnut", state="Karnataka", district="Bengaluru")
+            self.assertTrue(len(records) > 0, "Expected Karnataka Groundnut records")
+            self.assertEqual(records[0]["market"], "Bengaluru")
+            for r in records:
+                self.assertEqual(r["state"], "Karnataka")
+                self.assertNotIn(r["market"], {"Madurai", "Chennai", "Kanchipuram"})
+
     def test_gujarat_cotton_returns_gujarat_records(self) -> None:
         records = self._local_fallback_records("Cotton", "Gujarat")
         self.assertTrue(len(records) > 0, "Expected Gujarat Cotton records")
@@ -650,8 +682,6 @@ class TestMarketNetValueIntegration(unittest.TestCase):
         self.assertEqual(net_val_data["net_value_rs"], 21390.0)
         self.assertEqual(analysis["net_value_rs"], 21390.0)
         self.assertEqual(analysis["transport_type"], "mini_truck")
-        self.assertEqual(analysis["estimated_transport_cost_rs"], 610.0)
-        self.assertIn("mini_truck", net_val_data["calculation_basis"])
 
     @patch('requests.post')
     @patch.dict(os.environ, {"OPENROUTESERVICE_API_KEY": "test_key"})

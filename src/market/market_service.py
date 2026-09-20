@@ -10,6 +10,15 @@ import requests
 # Configure logging
 logger = logging.getLogger(__name__)
 
+BENGALURU_ALIASES = {"bengaluru", "bangalore", "bengaluru urban", "bangalore urban"}
+
+def matches_district(rec_district: str, target_district: str) -> bool:
+    r_norm = (rec_district or "").lower().strip()
+    t_norm = (target_district or "").lower().strip()
+    if t_norm in BENGALURU_ALIASES:
+        return r_norm in BENGALURU_ALIASES
+    return r_norm == t_norm
+
 class MarketService:
     """
     MarketService interacts with the data.gov.in API to fetch current daily market
@@ -178,23 +187,47 @@ class MarketService:
                 continue
 
         if records_found and state_records:
-            # Sort by date descending and filter to only the most recent date
-            state_records.sort(key=parse_arrival_date, reverse=True)
-            newest_date = state_records[0].get("arrival_date", "").strip()
-            filtered_records = [
+            # Filter strictly for requested state
+            norm_state = state.lower().strip()
+            state_records = [
                 r for r in state_records
-                if r.get("arrival_date", "").strip() == newest_date
+                if r.get("state", "").lower().strip() == norm_state
             ]
 
-            # Check status
-            status = "current" if newest_date == today_str else "recent"
-            # Set district_unavailable flag if a district was originally requested
-            is_fallback = bool(district)
-            for r in filtered_records:
-                r["data_status"] = status
-                r["last_updated"] = newest_date
-                r["district_unavailable"] = is_fallback
-            return filtered_records
+            if state_records:
+                state_records.sort(key=parse_arrival_date, reverse=True)
+                newest_date = state_records[0].get("arrival_date", "").strip()
+                filtered_records = [
+                    r for r in state_records
+                    if r.get("arrival_date", "").strip() == newest_date
+                ]
+
+                if district:
+                    district_recs = [
+                        r for r in filtered_records
+                        if matches_district(r.get("district", ""), district)
+                    ]
+                    other_recs = [
+                        r for r in filtered_records
+                        if not matches_district(r.get("district", ""), district)
+                    ]
+
+                    if district_recs:
+                        district_unavailable = False
+                        ordered_records = district_recs + other_recs
+                    else:
+                        district_unavailable = True
+                        ordered_records = other_recs
+                else:
+                    district_unavailable = False
+                    ordered_records = filtered_records
+
+                status = "current" if newest_date == today_str else "recent"
+                for r in ordered_records:
+                    r["data_status"] = status
+                    r["last_updated"] = newest_date
+                    r["district_unavailable"] = district_unavailable
+                return ordered_records
 
         # Step 3: Proceed to fallback logic
         err_msg = str(last_error) if last_error else f"No records found for any variant of '{commodity}' in '{state}'"
@@ -317,9 +350,10 @@ class MarketService:
 
             norm_commodity = commodity.lower().strip()
             norm_state = state.lower().strip()
-            paddy_names = ["paddy", "paddy(dhan)", "rice (paddy)"]
+            paddy_names = ["paddy", "paddy(dhan)", "rice (paddy)", "rice"]
 
-            filtered = []
+            # Strict filter: only records matching requested state AND matching commodity
+            state_records = []
             for record in data:
                 rec_commodity = record.get("commodity", "").lower().strip()
                 rec_state = record.get("state", "").lower().strip()
@@ -330,49 +364,32 @@ class MarketService:
                 elif norm_commodity == rec_commodity:
                     commodity_match = True
 
-                if not commodity_match or rec_state != norm_state:
-                    continue
+                if commodity_match and rec_state == norm_state:
+                    state_records.append(dict(record))
 
-                if district and record.get("district", "").lower().strip() != district.lower().strip():
-                    continue
-                if market and record.get("market", "").lower().strip() != market.lower().strip():
-                    continue
+            if not state_records:
+                logger.warning(f"No local fallback records found for commodity '{commodity}' in state '{state}'")
+                return []
 
-                filtered.append(record)
+            if district:
+                district_recs = [
+                    r for r in state_records
+                    if matches_district(r.get("district", ""), district)
+                ]
+                other_recs = [
+                    r for r in state_records
+                    if not matches_district(r.get("district", ""), district)
+                ]
 
-            district_unavailable = False
-            # Relax district/market constraint if empty to ensure demo works
-            if not filtered and (district or market):
-                district_unavailable = True
-                filtered = []
-                for record in data:
-                    rec_commodity = record.get("commodity", "").lower().strip()
-                    rec_state = record.get("state", "").lower().strip()
-
-                    commodity_match = False
-                    if norm_commodity in paddy_names and rec_commodity in paddy_names:
-                        commodity_match = True
-                    elif norm_commodity == rec_commodity:
-                        commodity_match = True
-
-                    if not commodity_match or rec_state != norm_state:
-                        continue
-                    filtered.append(record)
-
-            # If still empty for state, relax state constraint so demo never renders empty screen
-            if not filtered:
-                district_unavailable = True
-                filtered = []
-                for record in data:
-                    rec_commodity = record.get("commodity", "").lower().strip()
-                    commodity_match = False
-                    if norm_commodity in paddy_names and rec_commodity in paddy_names:
-                        commodity_match = True
-                    elif norm_commodity == rec_commodity:
-                        commodity_match = True
-
-                    if commodity_match:
-                        filtered.append(record)
+                if district_recs:
+                    district_unavailable = False
+                    filtered = district_recs + other_recs
+                else:
+                    district_unavailable = True
+                    filtered = other_recs
+            else:
+                district_unavailable = False
+                filtered = state_records
 
             for rec in filtered:
                 rec["data_source"] = "local_fallback"

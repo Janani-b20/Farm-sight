@@ -37,7 +37,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export async function getSchemeRecommendations(
   params: RecommendSchemesParams
 ): Promise<SchemeRecommendationResponse> {
-  const stateStr = params.state || 'Tamil Nadu';
+  const stateStr = params.state || 'Karnataka';
   const cropStr = params.crop || 'paddy';
   const riskTagsStr = (params.risk_tags || []).sort().join(',');
   const cacheKey = `${stateStr.toLowerCase()}_${cropStr.toLowerCase()}_${riskTagsStr}`;

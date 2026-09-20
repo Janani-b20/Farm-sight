@@ -309,5 +309,37 @@
     "lat": 13.4014,
     "lng": 78.0620,
     "display_name": "Chintamani Mandi"
+  },
+  {
+    "market": "kalaburagi",
+    "district": "kalaburagi",
+    "state": "karnataka",
+    "lat": 17.3297,
+    "lng": 76.8343,
+    "display_name": "Kalaburagi Mandi"
+  },
+  {
+    "market": "davangere",
+    "district": "davangere",
+    "state": "karnataka",
+    "lat": 14.4644,
+    "lng": 75.9218,
+    "display_name": "Davangere Mandi"
+  },
+  {
+    "market": "bangalore",
+    "district": "bangalore",
+    "state": "karnataka",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "display_name": "Bangalore APMC Mandi"
+  },
+  {
+    "market": "bengaluru urban",
+    "district": "bengaluru urban",
+    "state": "karnataka",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "display_name": "Bengaluru Urban APMC Mandi"
   }
 ]

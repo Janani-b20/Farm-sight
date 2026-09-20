@@ -14,8 +14,8 @@ class WhatIfRequest(BaseModel):
     disease: str
     confidence: float
 
-    state: str = "Tamil Nadu"
-    district: str = "Thanjavur"
+    state: str = "Karnataka"
+    district: str = "Bengaluru Urban"
 
     latitude: Optional[float] = None
     longitude: Optional[float] = None

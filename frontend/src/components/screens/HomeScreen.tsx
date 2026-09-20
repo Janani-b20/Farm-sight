@@ -60,8 +60,8 @@ export const HomeScreen: React.FC = () => {
 
     getMarketAnalysisCached({
       commodity: selectedCrop,
-      state: location.state || 'Tamil Nadu',
-      district: location.district || 'Madurai',
+      state: location.state || 'Karnataka',
+      district: location.district || 'Bengaluru Urban',
       quantity_kg: marketQuantityKg,
       user_lat: location.latitude,
       user_lng: location.longitude,
@@ -106,7 +106,7 @@ export const HomeScreen: React.FC = () => {
     return t.insightSuitable;
   };
 
-  const bestMarketName = marketData?.best_market?.market || marketData?.records?.[0]?.market || 'Madurai';
+  const bestMarketName = marketData?.best_market?.market || marketData?.records?.[0]?.market || 'Bengaluru';
   const localizedMandiName = getLocalizedDisplay(bestMarketName, language);
   const isLocalFallbackMarket = marketData?.data_source === 'local_fallback';
 

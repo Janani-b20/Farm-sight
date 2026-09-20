@@ -27,7 +27,7 @@ export const GovernmentSupportCard: React.FC<GovernmentSupportCardProps> = ({
     setLoading(true);
 
     getSchemeRecommendations({
-      state: location.state || 'Tamil Nadu',
+      state: location.state || 'Karnataka',
       crop: selectedCrop,
       risk_tags: riskTags || ['crop_loss', 'weather_risk'],
       top_n: 3,
@@ -92,7 +92,7 @@ export const GovernmentSupportCard: React.FC<GovernmentSupportCardProps> = ({
               {t.governmentSupportTitle}
             </h3>
             <p className="text-xs text-[#6F786F] font-medium">
-              {location.state || 'Tamil Nadu'} • {selectedCrop.toUpperCase()}
+              {location.state || 'Karnataka'} • {selectedCrop.toUpperCase()}
             </p>
           </div>
         </div>

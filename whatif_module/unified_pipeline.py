@@ -44,8 +44,8 @@ class FarmSightUnifiedPipeline:
         crop: str,
         disease: str,
         confidence: float,
-        state: str = "Tamil Nadu",
-        district: str = "Thanjavur",
+        state: str = "Karnataka",
+        district: str = "Bengaluru Urban",
         lat: float | None = None,
         lon: float | None = None,
         farmer_action: str = "spray_immediately",
@@ -254,8 +254,8 @@ class FarmSightUnifiedPipeline:
     def run_batch_pipeline(
         self,
         farm_reports: list,
-        state: str = "Tamil Nadu",
-        district: str = "Thanjavur",
+        state: str = "Karnataka",
+        district: str = "Bengaluru Urban",
         language: str = "en"
     ) -> list:
         """

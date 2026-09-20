@@ -47,8 +47,8 @@ export const MarketScreen: React.FC = () => {
     try {
       const res = await getMarketAnalysisCached({
         commodity: selectedCrop,
-        state: location.state || 'Tamil Nadu',
-        district: location.district || 'Madurai',
+        state: location.state || 'Karnataka',
+        district: location.district || 'Bengaluru Urban',
         quantity_kg: marketQuantityKg || 1000,
         user_lat: location.latitude,
         user_lng: location.longitude,

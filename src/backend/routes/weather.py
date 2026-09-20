@@ -11,13 +11,13 @@ router = APIRouter(
 @router.get("")
 def get_weather(
     lat: float = Query(
-        9.9252,
+        12.9716,
         ge=-90,
         le=90,
         description="Latitude",
     ),
     lon: float = Query(
-        78.1198,
+        77.5946,
         ge=-180,
         le=180,
         description="Longitude",
@@ -27,7 +27,7 @@ def get_weather(
     Return live weather for the supplied coordinates.
 
     Default coordinates:
-    Madurai, Tamil Nadu.
+    Bengaluru, Karnataka.
     """
 
     weather = get_weather_data(

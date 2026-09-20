@@ -112,19 +112,19 @@ export async function runWhatIf(
 
         state:
           request.state ||
-          'Tamil Nadu',
+          'Karnataka',
 
         district:
           request.district ||
-          'Madurai',
+          'Bengaluru Urban',
 
         latitude:
           request.latitude ??
-          9.9252,
+          12.9716,
 
         longitude:
           request.longitude ??
-          78.1198,
+          77.5946,
 
         farmer_action:
           request.farmer_action ||

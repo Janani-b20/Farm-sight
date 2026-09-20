@@ -27,10 +27,10 @@ export const ProfileScreen: React.FC = () => {
   ];
 
   const rawLocations = [
-    'Madurai, Tamil Nadu',
-    'Thanjavur, Tamil Nadu',
-    'Coimbatore, Tamil Nadu',
-    'Dindigul, Tamil Nadu',
+    'Bengaluru, Karnataka',
+    'Mandya, Karnataka',
+    'Mysuru, Karnataka',
+    'Tumakuru, Karnataka',
   ];
 
   return (

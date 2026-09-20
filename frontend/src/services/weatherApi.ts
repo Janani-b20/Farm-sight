@@ -25,8 +25,8 @@ export interface WeatherResponse {
 
 
 export const getWeather = async (
-  latitude: number = 9.9252,
-  longitude: number = 78.1198
+  latitude: number = 12.9716,
+  longitude: number = 77.5946
 ): Promise<WeatherResponse> => {
   const params = new URLSearchParams({
     lat: latitude.toString(),

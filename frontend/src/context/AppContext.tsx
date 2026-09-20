@@ -146,16 +146,16 @@ export const AppProvider: React.FC<{
 
   const [userLocation, setUserLocationState] =
     useState<string>(
-      'Madurai, Tamil Nadu'
+      'Bengaluru, Karnataka'
     );
 
   const [location, setLocation] = useState<AppLocation>({
-    latitude: 9.9252,
-    longitude: 78.1198,
-    district: 'Madurai',
-    city: 'Madurai',
-    state: 'Tamil Nadu',
-    locationName: 'Madurai, Tamil Nadu',
+    latitude: 12.9716,
+    longitude: 77.5946,
+    district: 'Bengaluru Urban',
+    city: 'Bengaluru',
+    state: 'Karnataka',
+    locationName: 'Bengaluru, Karnataka',
     locationStatus: 'fallback',
   });
 
@@ -168,15 +168,15 @@ export const AppProvider: React.FC<{
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocation(prev => ({
         ...prev,
-        latitude: 9.9252,
-        longitude: 78.1198,
-        district: 'Madurai',
-        city: 'Madurai',
-        state: 'Tamil Nadu',
-        locationName: 'Madurai, Tamil Nadu',
+        latitude: 12.9716,
+        longitude: 77.5946,
+        district: 'Bengaluru Urban',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        locationName: 'Bengaluru, Karnataka',
         locationStatus: 'fallback',
       }));
-      setUserLocationState('Madurai, Tamil Nadu');
+      setUserLocationState('Bengaluru, Karnataka');
       return;
     }
 
@@ -197,8 +197,8 @@ export const AppProvider: React.FC<{
         const geoResult = await reverseGeocode(lat, lng);
 
         if (geoResult && (geoResult.district || geoResult.state)) {
-          const dist = geoResult.district || 'Madurai';
-          const st = geoResult.state || 'Tamil Nadu';
+          const dist = geoResult.district || 'Bengaluru Urban';
+          const st = geoResult.state || 'Karnataka';
           const name = geoResult.displayName || `${geoResult.city || dist}, ${st}`;
 
           setLocation({
@@ -219,7 +219,7 @@ export const AppProvider: React.FC<{
             longitude: lng,
             locationStatus: 'live',
             locationName:
-              prev.locationName && prev.locationName !== 'Madurai, Tamil Nadu'
+              prev.locationName && prev.locationName !== 'Bengaluru, Karnataka'
                 ? prev.locationName
                 : 'Current Location',
           }));
@@ -230,15 +230,15 @@ export const AppProvider: React.FC<{
         console.warn('Geolocation error:', error);
         const status: LocationStatus = error.code === 1 ? 'denied' : 'fallback';
         setLocation({
-          latitude: 9.9252,
-          longitude: 78.1198,
-          district: 'Madurai',
-          city: 'Madurai',
-          state: 'Tamil Nadu',
-          locationName: 'Madurai, Tamil Nadu',
+          latitude: 12.9716,
+          longitude: 77.5946,
+          district: 'Bengaluru Urban',
+          city: 'Bengaluru',
+          state: 'Karnataka',
+          locationName: 'Bengaluru, Karnataka',
           locationStatus: status,
         });
-        setUserLocationState('Madurai, Tamil Nadu');
+        setUserLocationState('Bengaluru, Karnataka');
       },
       {
         enableHighAccuracy: true,
@@ -284,7 +284,7 @@ export const AppProvider: React.FC<{
   };
 
   React.useEffect(() => {
-    requestLocation();
+    // Default to Bengaluru, Karnataka on startup for hackathon demo
   }, []);
 
   const [voiceSpeed, setVoiceSpeed] =
