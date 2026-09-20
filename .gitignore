@@ -44,3 +44,8 @@ frontend/dist/
 .vscode/
 .DS_Store
 Thumbs.db
+# Root Node dependencies
+node_modules/
+
+# Generated TTS audio
+whatif_module/farmer_advice.mp3
