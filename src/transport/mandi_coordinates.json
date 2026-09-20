@@ -1,0 +1,345 @@
+[
+  {
+    "_comment": "Initial coordinate dataset for FarmSight TransportEstimator.",
+    "_note": "Coordinates sourced from publicly available geographic data for known Indian mandi locations.",
+    "_coverage": "Covers the mandis present in fallback_market_data.json: Paddy (Punjab), Cotton & Groundnut (Gujarat).",
+    "_todo": "Expand with live Agmarknet/APMC coordinate data when database integration is complete.",
+    "_format": "Each entry: market (lowercase key), district (lowercase), state (lowercase), lat, lng"
+  },
+  {
+    "market": "amritsar",
+    "district": "amritsar",
+    "state": "punjab",
+    "lat": 31.634,
+    "lng": 74.8723,
+    "display_name": "Amritsar Mandi"
+  },
+  {
+    "market": "rayya",
+    "district": "amritsar",
+    "state": "punjab",
+    "lat": 31.6523,
+    "lng": 74.9534,
+    "display_name": "Rayya Mandi"
+  },
+  {
+    "market": "tarn taran",
+    "district": "tarn taran",
+    "state": "punjab",
+    "lat": 31.452,
+    "lng": 74.9257,
+    "display_name": "Tarn Taran Mandi"
+  },
+  {
+    "market": "bhavnagar",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.7645,
+    "lng": 72.1519,
+    "display_name": "Bhavnagar Mandi"
+  },
+  {
+    "market": "damnagar",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.6906,
+    "lng": 71.5259,
+    "display_name": "Damnagar Mandi"
+  },
+  {
+    "market": "amreli",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.6038,
+    "lng": 71.2221,
+    "display_name": "Amreli APMC Mandi"
+  },
+  {
+    "market": "rajkot",
+    "district": "rajkot",
+    "state": "gujarat",
+    "lat": 22.3039,
+    "lng": 70.8022,
+    "display_name": "Rajkot Mandi"
+  },
+  {
+    "market": "gondal",
+    "district": "rajkot",
+    "state": "gujarat",
+    "lat": 21.961,
+    "lng": 70.7986,
+    "display_name": "Gondal Mandi"
+  },
+  {
+    "market": "junagadh",
+    "district": "junagadh",
+    "state": "gujarat",
+    "lat": 21.5222,
+    "lng": 70.4579,
+    "display_name": "Junagadh Mandi"
+  },
+  {
+    "market": "jam jodhpur apmc",
+    "district": "jamnagar",
+    "state": "gujarat",
+    "lat": 21.9056,
+    "lng": 70.0247,
+    "display_name": "Jam Jodhpur APMC"
+  },
+  {
+    "market": "savarkundla apmc",
+    "district": "amreli",
+    "state": "gujarat",
+    "lat": 21.3323,
+    "lng": 71.3061,
+    "display_name": "Savarkundla APMC"
+  },
+  {
+    "market": "apmc halvad",
+    "district": "morbi",
+    "state": "gujarat",
+    "lat": 22.9996,
+    "lng": 71.1738,
+    "display_name": "APMC HALVAD"
+  },
+  {
+    "market": "jetpur(dist.rajkot) apmc",
+    "district": "rajkot",
+    "state": "gujarat",
+    "lat": 21.7583,
+    "lng": 70.6214,
+    "display_name": "Jetpur APMC"
+  },
+  {
+    "market": "jamnagar apmc",
+    "district": "jamnagar",
+    "state": "gujarat",
+    "lat": 22.4707,
+    "lng": 70.0577,
+    "display_name": "Jamnagar APMC"
+  },
+  {
+    "market": "tindivanam apmc",
+    "district": "villupuram",
+    "state": "tamil nadu",
+    "lat": 12.228,
+    "lng": 79.6503,
+    "display_name": "Tindivanam APMC"
+  },
+  {
+    "market": "kknagar(uzhavar sandhai)",
+    "district": "thiruchirappalli",
+    "state": "tamil nadu",
+    "lat": 10.7905,
+    "lng": 78.7047,
+    "display_name": "KKNagar Uzhavar Sandhai"
+  },
+  {
+    "market": "katpadi (uzhavar sandhai)",
+    "district": "vellore",
+    "state": "tamil nadu",
+    "lat": 12.9796,
+    "lng": 79.1375,
+    "display_name": "Katpadi Uzhavar Sandhai"
+  },
+  {
+    "market": "thanjavur",
+    "district": "thanjavur",
+    "state": "tamil nadu",
+    "lat": 10.7870,
+    "lng": 79.1378,
+    "display_name": "Thanjavur Mandi"
+  },
+  {
+    "market": "kumbakonam",
+    "district": "thanjavur",
+    "state": "tamil nadu",
+    "lat": 10.9602,
+    "lng": 79.3845,
+    "display_name": "Kumbakonam Mandi"
+  },
+  {
+    "market": "nagapattinam",
+    "district": "tiruvarur",
+    "state": "tamil nadu",
+    "lat": 10.7656,
+    "lng": 79.8424,
+    "display_name": "Nagapattinam Mandi"
+  },
+  {
+    "market": "srirangam",
+    "district": "trichy",
+    "state": "tamil nadu",
+    "lat": 10.8624,
+    "lng": 78.6923,
+    "display_name": "Srirangam Mandi"
+  },
+  {
+    "market": "madurai",
+    "district": "madurai",
+    "state": "tamil nadu",
+    "lat": 9.9252,
+    "lng": 78.1198,
+    "display_name": "Madurai Central Mandi"
+  },
+  {
+    "market": "trichy",
+    "district": "trichy",
+    "state": "tamil nadu",
+    "lat": 10.7905,
+    "lng": 78.7047,
+    "display_name": "Trichy Mandi"
+  },
+  {
+    "market": "tiruvarur",
+    "district": "tiruvarur",
+    "state": "tamil nadu",
+    "lat": 10.7726,
+    "lng": 79.6365,
+    "display_name": "Tiruvarur Mandi"
+  },
+  {
+    "market": "ludhiana",
+    "district": "ludhiana",
+    "state": "punjab",
+    "lat": 30.9010,
+    "lng": 75.8573,
+    "display_name": "Ludhiana Mandi"
+  },
+  {
+    "market": "burdwan",
+    "district": "bardhaman",
+    "state": "west bengal",
+    "lat": 23.2324,
+    "lng": 87.8615,
+    "display_name": "Burdwan Mandi"
+  },
+  {
+    "market": "berhampore",
+    "district": "murshidabad",
+    "state": "west bengal",
+    "lat": 24.0988,
+    "lng": 88.2679,
+    "display_name": "Berhampore Mandi"
+  },
+  {
+    "market": "arambag",
+    "district": "hooghly",
+    "state": "west bengal",
+    "lat": 22.8824,
+    "lng": 87.7836,
+    "display_name": "Arambag Mandi"
+  },
+  {
+    "market": "bhimavaram",
+    "district": "west godavari",
+    "state": "andhra pradesh",
+    "lat": 16.5449,
+    "lng": 81.5212,
+    "display_name": "Bhimavaram Mandi"
+  },
+  {
+    "market": "rajahmundry",
+    "district": "east godavari",
+    "state": "andhra pradesh",
+    "lat": 17.0005,
+    "lng": 81.8040,
+    "display_name": "Rajahmundry Mandi"
+  },
+  {
+    "market": "vijayawada",
+    "district": "krishna",
+    "state": "andhra pradesh",
+    "lat": 16.5062,
+    "lng": 80.6480,
+    "display_name": "Vijayawada Mandi"
+  },
+  {
+    "market": "bengaluru",
+    "district": "bengaluru",
+    "state": "karnataka",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "display_name": "Bengaluru APMC Mandi"
+  },
+  {
+    "market": "mandya",
+    "district": "mandya",
+    "state": "karnataka",
+    "lat": 12.5218,
+    "lng": 76.8951,
+    "display_name": "Mandya Mandi"
+  },
+  {
+    "market": "raichur",
+    "district": "raichur",
+    "state": "karnataka",
+    "lat": 16.2076,
+    "lng": 77.3463,
+    "display_name": "Raichur Mandi"
+  },
+  {
+    "market": "davanagere",
+    "district": "davanagere",
+    "state": "karnataka",
+    "lat": 14.4644,
+    "lng": 75.9218,
+    "display_name": "Davanagere Mandi"
+  },
+  {
+    "market": "bellary",
+    "district": "bellary",
+    "state": "karnataka",
+    "lat": 15.1394,
+    "lng": 76.9214,
+    "display_name": "Bellary Mandi"
+  },
+  {
+    "market": "tumkur",
+    "district": "tumkur",
+    "state": "karnataka",
+    "lat": 13.3379,
+    "lng": 77.1173,
+    "display_name": "Tumkur Mandi"
+  },
+  {
+    "market": "chintamani",
+    "district": "chikkaballapur",
+    "state": "karnataka",
+    "lat": 13.4014,
+    "lng": 78.0620,
+    "display_name": "Chintamani Mandi"
+  },
+  {
+    "market": "kalaburagi",
+    "district": "kalaburagi",
+    "state": "karnataka",
+    "lat": 17.3297,
+    "lng": 76.8343,
+    "display_name": "Kalaburagi Mandi"
+  },
+  {
+    "market": "davangere",
+    "district": "davangere",
+    "state": "karnataka",
+    "lat": 14.4644,
+    "lng": 75.9218,
+    "display_name": "Davangere Mandi"
+  },
+  {
+    "market": "bangalore",
+    "district": "bangalore",
+    "state": "karnataka",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "display_name": "Bangalore APMC Mandi"
+  },
+  {
+    "market": "bengaluru urban",
+    "district": "bengaluru urban",
+    "state": "karnataka",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "display_name": "Bengaluru Urban APMC Mandi"
+  }
+]
